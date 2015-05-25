@@ -1,1 +1,3 @@
 Use (widget).addAction for auto-completion
+Make tabs closable with mmb by subclassing
+Make sure you can only replace files that are ACTUALLY untitled AND that they have nothing in the editor

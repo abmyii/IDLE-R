@@ -1,6 +1,7 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-#  editor.py
+#  untitled.py
 #  
 #  Copyright 2015 abmyii
 #  
@@ -20,9 +21,10 @@
 #  MA 02110-1301, USA.
 #  
 #  
-from PyQt4 import Qt, QtCore, QtGui
 
-class Editor(QtGui.QTextEdit):
-    
-    def isModified(self):
-        return self.document().isModified()
+def main():
+
+    return 0
+
+if __name__ == '__main__':
+    main()
