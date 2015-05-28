@@ -28,6 +28,7 @@ from datetime import date
 # Import all seperate parts of the IDE
 from src.editor import Editor
 from src.tabBar import TabWidget
+from src.extended import QAction
 
 class IDLE_R(QtGui.QMainWindow):
     
@@ -63,6 +64,9 @@ class IDLE_R(QtGui.QMainWindow):
     
     def addMenuActions(self):
         """Adds all of the actions to the menu bar"""
+        # Clear menu bar in case already called
+        self.menu_bar.clear()
+        
         # Add the "File" menu
         fileMenu = self.menu_bar.addMenu("File")
         action = self.newAction("New", self.newFile, "Ctrl+N")
@@ -71,6 +75,16 @@ class IDLE_R(QtGui.QMainWindow):
         fileMenu.addAction(action)
         action = self.newAction("Open...", self.openFile, "Ctrl+O")
         fileMenu.addAction(action)
+        
+        # Recent files menu
+        menu = fileMenu.addMenu("Recent Files")
+        # Add recent files
+        for recentFile in self.readRecentFile():
+            if recentFile:
+                rfile = QAction(recentFile, self)
+                rfile.stored = recentFile
+                rfile.connect(self.openRecentFile)
+                menu.addAction(rfile)
     
     def openFile(self, filename=False):
         """Open a new file"""
@@ -78,14 +92,15 @@ class IDLE_R(QtGui.QMainWindow):
         if not filename:
             fopen = QtGui.QFileDialog.getOpenFileName
             filename = fopen(
-                self, 'Open File', os.environ["HOME"],
+                self, 'Open File', os.curdir,
                 "Python files (*.py *.pyw *.py3);; All files (*)"
             )
             if not filename:  # Filename was blank ('')
                 return
             
-        # Rewrite recent files
+        # Rewrite recent files & Update Recent Files list
         self.writeRecentFile(filename)
+        self.addMenuActions()
         
         # Read file and display
         text = open(filename, 'r').read()
@@ -98,6 +113,10 @@ class IDLE_R(QtGui.QMainWindow):
                 self.newFile(name, True, text)
                 return
         self.newFile(name, False, text)
+    
+    def openRecentFile(self, action):
+        """Open a recent file"""
+        self.openFile(action.stored)
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
@@ -171,7 +190,7 @@ class IDLE_R(QtGui.QMainWindow):
         home = os.environ["HOME"]
         # Get the old data in the "recent_files" file
         with open(home + '/.idle-r/recent_files') as f:
-            old_data = f.read()
+            old_data = f.read().split('\n')
         
         # Write the new data
         with open(home + '/.idle-r/recent_files', 'w') as f:
@@ -180,12 +199,12 @@ class IDLE_R(QtGui.QMainWindow):
             count = 1
             for rfile in old_data:
                 # Check if not duped or deleted
-                if rfile is filename or not os.path.isfile(rfile):
+                if rfile == filename or not os.path.isfile(rfile):
                     pass
                 else:
                     # Write if count not 10 because max recent files num
                     if not count >= 10:
-                        recent_files.write(rfile + '\n')
+                        f.write(rfile + '\n')
                         count += 1
 
 if __name__ == '__main__':

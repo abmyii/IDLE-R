@@ -31,7 +31,7 @@ class TabWidget(QtGui.QTabWidget):
         self.setCurrentIndex(index)
         editor = self.currentWidget()
         if editor:
-            if editor.isUntitled and not editor.document().isModified():
+            if not editor.document().isModified():
                 self.removeTab(index)
                 old_index -= 1
             self.setCurrentIndex(old_index)
