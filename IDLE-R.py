@@ -21,11 +21,13 @@
 #  MA 02110-1301, USA.
 #
 #
-import sys
+import sys, os
 from PyQt4 import Qt, QtCore, QtGui
+from datetime import date
 
-# Import all seperate parts
+# Import all seperate parts of the IDE
 from src.editor import Editor
+from src.tabBar import TabWidget
 
 class IDLE_R(QtGui.QMainWindow):
     
@@ -46,11 +48,11 @@ class IDLE_R(QtGui.QMainWindow):
         self.addMenuActions()
         
         # Add toolbar
-        self.tab_bar = QtGui.QTabWidget()
+        self.tab_bar = TabWidget()
         self.tab_bar.setMovable(True)
         
         # Set tabs to be closable
-        self.tab_bar.tabCloseRequested.connect(self.closeTab)
+        self.tab_bar.tabCloseRequested.connect(self.tab_bar.closeTab)
         self.tab_bar.setTabsClosable(True)
         
         # Set central widget
@@ -63,17 +65,39 @@ class IDLE_R(QtGui.QMainWindow):
         """Adds all of the actions to the menu bar"""
         # Add the "File" menu
         fileMenu = self.menu_bar.addMenu("File")
-        action = self.newAction("New", self.checkUntitled, "Ctrl+N")
+        action = self.newAction("New", self.newFile, "Ctrl+N")
         fileMenu.addAction(action)
         action = self.newAction("New (with Template)", self.template)
         fileMenu.addAction(action)
+        action = self.newAction("Open...", self.openFile, "Ctrl+O")
+        fileMenu.addAction(action)
     
-    def closeTab(self, tabindex):
-        """Called when closing tabs"""
-        self.tab_bar.removeTab(tabindex)
-    
-    def checkUntitled(self):
-        self.newFile()
+    def openFile(self, filename=False):
+        """Open a new file"""
+        # Ask user for file
+        if not filename:
+            fopen = QtGui.QFileDialog.getOpenFileName
+            filename = fopen(
+                self, 'Open File', os.environ["HOME"],
+                "Python files (*.py *.pyw *.py3);; All files (*)"
+            )
+            if not filename:  # Filename was blank ('')
+                return
+            
+        # Rewrite recent files
+        self.writeRecentFile(filename)
+        
+        # Read file and display
+        text = open(filename, 'r').read()
+        name = os.path.split(str(filename))[-1]
+        
+        # Check which way to open file & open
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            if editor.isUntitled and not editor.document().isModified():
+                self.newFile(name, True, text)
+                return
+        self.newFile(name, False, text)
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
@@ -93,10 +117,12 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Make editor and configure
         editor = Editor()
+        editor.isUntitled = True  # Makes untitled files distinguishable
         editor.textChanged.connect(self.unsaved)
         
         # Add given text if any
         if text:
+            editor.isUntitled = False
             editor.setText(text)
         
         # Add the tab
@@ -116,10 +142,18 @@ class IDLE_R(QtGui.QMainWindow):
         Action.triggered.connect(action)
         return Action
     
+    def readRecentFile(self):
+        """Returns the recent files"""
+        home = os.environ["HOME"]
+        with open(home + '/.idle-r/recent_files') as recentFiles:
+            return recentFiles.read().split('\n')[:10]  # Top 10
+    
     def template(self):
         """Make a new file with a template"""
         with open('templates/py.template') as template:
-            self.newFile(text=template.read())
+            txt = template.read()
+            txt = txt.replace('<year>', str(date.today().year))
+            self.newFile(text=txt)
     
     def unsaved(self):
         """Checks if the current file is saved/unsaved"""
@@ -131,6 +165,28 @@ class IDLE_R(QtGui.QMainWindow):
                 self.tab_bar.setTabText(index, '* ' + name)
         else:
             self.tab_bar.setTabText(index, name.replace('* ', ''))
+    
+    def writeRecentFile(self, filename):
+        """Write the recent files"""
+        home = os.environ["HOME"]
+        # Get the old data in the "recent_files" file
+        with open(home + '/.idle-r/recent_files') as f:
+            old_data = f.read()
+        
+        # Write the new data
+        with open(home + '/.idle-r/recent_files', 'w') as f:
+            f.write(filename + '\n')
+            # Write old data
+            count = 1
+            for rfile in old_data:
+                # Check if not duped or deleted
+                if rfile is filename or not os.path.isfile(rfile):
+                    pass
+                else:
+                    # Write if count not 10 because max recent files num
+                    if not count >= 10:
+                        recent_files.write(rfile + '\n')
+                        count += 1
 
 if __name__ == '__main__':
     # Run the IDE

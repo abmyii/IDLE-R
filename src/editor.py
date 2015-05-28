@@ -23,6 +23,7 @@
 from PyQt4 import Qt, QtCore, QtGui
 
 class Editor(QtGui.QTextEdit):
+    isUntitled = False
     
     def isModified(self):
         return self.document().isModified()
