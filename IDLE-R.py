@@ -67,7 +67,7 @@ class IDLE_R(QtGui.QMainWindow):
         # Clear menu bar in case already called
         self.menu_bar.clear()
         
-        # Add the "File" menu
+        ## Add the "File" menu ##
         fileMenu = self.menu_bar.addMenu("File")
         action = self.newAction("New", self.newFile, "Ctrl+N")
         fileMenu.addAction(action)
@@ -76,8 +76,20 @@ class IDLE_R(QtGui.QMainWindow):
         action = self.newAction("Open...", self.openFile, "Ctrl+O")
         fileMenu.addAction(action)
         
+        # Separator
+        fileMenu.addSeparator()
+        
+        action = self.newAction("Save", self.saveFile, "Ctrl+S")
+        fileMenu.addAction(action)
+        action = self.newAction("Save As...", self.saveAs, "Ctrl+Shift+S")
+        fileMenu.addAction(action)
+        
+        # Separator
+        fileMenu.addSeparator()
+        
         # Recent files menu
         menu = fileMenu.addMenu("Recent Files")
+        
         # Add recent files
         for recentFile in self.readRecentFile():
             if recentFile:
@@ -85,6 +97,9 @@ class IDLE_R(QtGui.QMainWindow):
                 rfile.stored = recentFile
                 rfile.connect(self.openRecentFile)
                 menu.addAction(rfile)
+        
+        # Separator
+        fileMenu.addSeparator()
     
     def openFile(self, filename=False):
         """Open a new file"""
@@ -110,7 +125,7 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             if editor.isUntitled and not editor.document().isModified():
-                self.newFile(name, True, text)
+                self.newFile(name, True, text, filename)
                 return
         self.newFile(name, False, text)
     
@@ -126,7 +141,7 @@ class IDLE_R(QtGui.QMainWindow):
             Action.setShortcut(shortcut)
         return Action
         
-    def newFile(self, name=None, ow=False, text=None):
+    def newFile(self, name=None, ow=False, text=None, filename=None):
         """Make a new file"""
         if name:
             name = name
@@ -142,6 +157,7 @@ class IDLE_R(QtGui.QMainWindow):
         # Add given text if any
         if text:
             editor.isUntitled = False
+            editor.fname = filename
             editor.setText(text)
         
         # Add the tab
@@ -164,8 +180,64 @@ class IDLE_R(QtGui.QMainWindow):
     def readRecentFile(self):
         """Returns the recent files"""
         home = os.environ["HOME"]
+        top_ten = []
         with open(home + '/.idle-r/recent_files') as recentFiles:
-            return recentFiles.read().split('\n')[:10]  # Top 10
+            for fpath in recentFiles.read().split('\n'):
+                if os.path.isfile(fpath):
+                    top_ten.append(fpath)
+                if len(top_ten) is 10:
+                    break
+            return top_ten
+    
+    def saveAs(self):
+        """Save current file"""
+        self.saveFile(True)
+        
+    def saveFile(self, saveAs=False):
+        """Save current file"""
+        editor = self.tab_bar.currentWidget()
+        
+        # Add newline at end of file while retaining cursor pos
+        try:
+            last = editor.toPlainText()[-1]
+        except IndexError:
+            last = ''
+        
+        if last != '\n':
+            pos = editor.textCursor().position()
+            editor.setText(editor.toPlainText() + '\n')
+            editor.textCursor().setPosition(pos)
+        
+        if editor.isUntitled or saveAs:
+            # Get name for the file to save to
+            fsave = QtGui.QFileDialog.getSaveFileName
+            filename = fsave(
+                self, 'Save As', os.curdir,
+                "Python files (*.py *.pyw *.py3);; All files (*)"
+            )
+            if not filename:  # Filename was blank ('')
+                return
+            
+            # Add .py if not in the filename
+            if not filename[-3:] == '.py':
+                filename += '.py'
+            
+            # Write to file
+            with open(filename, 'w') as f:
+                f.write(editor.toPlainText())
+            
+            # Read file and display
+            text = open(filename, 'r').read()
+            name = os.path.split(str(filename))[-1]
+            self.newFile(name, True, text, filename)
+            
+        else:
+            # Write to file
+            with open(editor.fname, 'w') as f:
+                f.write(editor.toPlainText())
+        
+        # Fix editor vars
+        editor.setModified(False)
     
     def template(self):
         """Make a new file with a template"""
