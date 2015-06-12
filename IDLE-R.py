@@ -53,7 +53,7 @@ class IDLE_R(QtGui.QMainWindow):
         self.tab_bar.setMovable(True)
         
         # Set tabs to be closable
-        self.tab_bar.tabCloseRequested.connect(self.tab_bar.closeTab)
+        self.tab_bar.tabCloseRequested.connect(self.closeTab)
         self.tab_bar.setTabsClosable(True)
         
         # Set central widget
@@ -101,14 +101,44 @@ class IDLE_R(QtGui.QMainWindow):
         # Separator
         fileMenu.addSeparator()
         
-        action = self.newAction("Close", self.closeFile, "Ctrl+W")
+        action = self.newAction("Close", self.closeTab, "Ctrl+W")
+        fileMenu.addAction(action)
+        action = self.newAction("Quit", self.close, "Ctrl+Q")
         fileMenu.addAction(action)
     
-    def closeFile(self):
-        editor = self.tab_bar.currentWidget()
-        if editor and editor.isModified():
-            self.saveFile()
-        self.tab_bar.removeTab(self.tab_bar.currentIndex())
+    def closeEvent(self, QCloseEvent):
+        edited = False
+        for tab in range(self.tab_bar.count()):
+            if self.tab_bar.widget(tab).isModified():
+                edited = True
+                break
+        
+        if edited:
+            msgBox = QtGui.QMessageBox()
+    
+            # Info
+            msgBox.setText("Some documents have been modified.")
+            msgBox.setInformativeText(
+                "Do you want to save the files?"
+            )
+            msgBox.setIcon(msgBox.Warning)
+            
+            # Buttons
+            msgBox.setStandardButtons(msgBox.Cancel | msgBox.Discard)
+            msgBox.setDefaultButton(msgBox.Cancel)
+            
+            # Run
+            ret = msgBox.exec_()
+    
+            if ret == msgBox.Discard:
+                super(IDLE_R, self).close()
+            else:
+                QCloseEvent.ignore()
+        else:
+            super(IDLE_R, self).close()
+    
+    def closeTab(self, index):
+        self.tab_bar.closeTab(index, self.saveFile)
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
@@ -229,7 +259,7 @@ class IDLE_R(QtGui.QMainWindow):
                 "Python files (*.py *.pyw *.py3);; All files (*)"
             )
             if not filename:  # Filename was blank ('')
-                return
+                return False
             
             # Add .py if not in the filename
             if not filename[-3:] == '.py':

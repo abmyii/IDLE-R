@@ -25,7 +25,7 @@ from PyQt4 import Qt, QtCore, QtGui
 
 class TabWidget(QtGui.QTabWidget):
     
-    def closeTab(self, index):
+    def closeTab(self, index, saveFile):
         """Called when closing tabs"""
         old_index = self.currentIndex()
         self.setCurrentIndex(index)
@@ -34,6 +34,28 @@ class TabWidget(QtGui.QTabWidget):
             if not editor.document().isModified():
                 self.removeTab(index)
                 old_index -= 1
+            else:
+                msgBox = QtGui.QMessageBox()
+            
+                # Info
+                msgBox.setText("The document has been modified.")
+                msgBox.setInformativeText(
+                    "Do you want to save your changes?"
+                )
+                msgBox.setIcon(msgBox.Warning)
+                
+                # Buttons
+                buttons = msgBox.Cancel | msgBox.Discard | msgBox.Save
+                msgBox.setStandardButtons(buttons)
+                msgBox.setDefaultButton(msgBox.Save)
+                
+                # Run
+                ret = msgBox.exec_()
+                
+                # Process return code
+                if ret == msgBox.Discard or ret == msgBox.Save and saveFile():
+                    self.removeTab(self.currentIndex())
+                    
             self.setCurrentIndex(old_index)
     
     def mousePressEvent(self, QMouseEvent):
