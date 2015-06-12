@@ -105,6 +105,25 @@ class IDLE_R(QtGui.QMainWindow):
         fileMenu.addAction(action)
         action = self.newAction("Quit", self.close, "Ctrl+Q")
         fileMenu.addAction(action)
+        
+        ## Add the "Edit" menu ##
+        editMenu = self.menu_bar.addMenu("Edit")
+        action = self.newAction("Undo", self.undo, "Ctrl+Z")
+        editMenu.addAction(action)
+        action = self.newAction("Redo", self.redo, "Ctrl+Shift+Z")
+        editMenu.addAction(action)
+        
+        editMenu.addSeparator()
+        
+        # Default edit actions
+        action = self.newAction("Cut", self.cut, "Ctrl+X")
+        editMenu.addAction(action)
+        action = self.newAction("Copy", self.copy, "Ctrl+C")
+        editMenu.addAction(action)
+        action = self.newAction("Paste", self.paste, "Ctrl+V")
+        editMenu.addAction(action)
+        action = self.newAction("Select All", self.selectAll, "Ctrl+A")
+        editMenu.addAction(action)
     
     def closeEvent(self, QCloseEvent):
         edited = False
@@ -114,7 +133,10 @@ class IDLE_R(QtGui.QMainWindow):
                 break
         
         if edited:
-            msgBox = QtGui.QMessageBox()
+            msgBox = QtGui.QMessageBox(self)
+            
+            # Set pos
+            msgBox = self.setMsgBoxPos(msgBox)
     
             # Info
             msgBox.setText("Some documents have been modified.")
@@ -138,7 +160,17 @@ class IDLE_R(QtGui.QMainWindow):
             super(IDLE_R, self).close()
     
     def closeTab(self, index):
-        self.tab_bar.closeTab(index, self.saveFile)
+        self.tab_bar.closeTab(index, self.saveFile, self.setMsgBoxPos, self)
+
+    def copy(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.copy()
+    
+    def cut(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.cut()
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
@@ -220,6 +252,11 @@ class IDLE_R(QtGui.QMainWindow):
         """Open a recent file"""
         self.openFile(action.stored)
     
+    def paste(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.paste()
+    
     def readRecentFile(self):
         """Returns the recent files"""
         home = os.environ["HOME"]
@@ -231,6 +268,11 @@ class IDLE_R(QtGui.QMainWindow):
                 if len(top_ten) is 10:
                     break
             return top_ten
+    
+    def redo(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.redo()
     
     def saveAs(self):
         """Save current file"""
@@ -289,9 +331,22 @@ class IDLE_R(QtGui.QMainWindow):
         editor.isUntitled = False
         
         # Fix editor vars
-        #editor.textCursor().setPosition(pos)
         editor.setModified(False)
         self.unsaved()
+    
+    def selectAll(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.selectAll()
+        
+    def setMsgBoxPos(self, msgBox):
+        rect = msgBox.geometry()
+        w = self.width() / 2
+        h = self.height() / 2
+        pos = QtCore.QPoint(w - 100, h + 50)
+        rect.moveCenter(pos)
+        msgBox.setGeometry(rect)
+        return msgBox
     
     def template(self):
         """Make a new file with a template"""
@@ -299,6 +354,11 @@ class IDLE_R(QtGui.QMainWindow):
             txt = template.read()
             txt = txt.replace('<year>', str(date.today().year))
             self.newFile(text=txt)
+    
+    def undo(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.undo()
     
     def unsaved(self):
         """Checks if the current file is saved/unsaved"""

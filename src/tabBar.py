@@ -25,7 +25,7 @@ from PyQt4 import Qt, QtCore, QtGui
 
 class TabWidget(QtGui.QTabWidget):
     
-    def closeTab(self, index, saveFile):
+    def closeTab(self, index, saveFile, setMsgBoxPos, mainwindow):
         """Called when closing tabs"""
         old_index = self.currentIndex()
         self.setCurrentIndex(index)
@@ -35,7 +35,10 @@ class TabWidget(QtGui.QTabWidget):
                 self.removeTab(index)
                 old_index -= 1
             else:
-                msgBox = QtGui.QMessageBox()
+                msgBox = QtGui.QMessageBox(mainwindow)
+                
+                # Set pos
+                msgBox = setMsgBoxPos(msgBox)
             
                 # Info
                 msgBox.setText("The document has been modified.")
