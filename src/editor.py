@@ -24,10 +24,10 @@ from PyQt4 import Qt, QtCore, QtGui
 
 class Editor(QtGui.QTextEdit):
     isUntitled = False
-    fname = None
+    fname = ''
     
     def isModified(self):
         return self.document().isModified()
-    
+        
     def setModified(self, modified):
         return self.document().setModified(modified)

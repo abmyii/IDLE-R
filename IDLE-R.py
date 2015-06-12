@@ -100,6 +100,63 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Separator
         fileMenu.addSeparator()
+        
+        action = self.newAction("Close", self.closeFile, "Ctrl+W")
+        fileMenu.addAction(action)
+    
+    def closeFile(self):
+        editor = self.tab_bar.currentWidget()
+        if editor and editor.isModified():
+            self.saveFile()
+        self.tab_bar.removeTab(self.tab_bar.currentIndex())
+    
+    def newAction(self, name, action, shortcut=None):
+        """A function so I can make actions"""
+        Action = QtGui.QAction(name, self)
+        Action.triggered.connect(action)
+        if shortcut:
+            Action.setShortcut(shortcut)
+        return Action
+        
+    def newFile(self, name=0, ow=0, text=0, fname=0, cpos=0):
+        """Make a new file"""
+        if name:
+            name = name
+        else:
+            name = "untitled{}.py".format(self.file_index)
+            self.file_index += 1
+        
+        # Make editor and configure
+        editor = Editor()
+        editor.isUntitled = True  # Makes untitled files distinguishable
+        editor.textChanged.connect(self.unsaved)
+        
+        # Add given text if any
+        if text:
+            editor.isUntitled = False
+            editor.fname = fname
+            editor.setText(text)
+            
+            # Set cursor pos
+            for i in range(cpos):
+                editor.moveCursor(19, 0)
+        
+        # Add the tab
+        if ow:
+            index = self.tab_bar.currentIndex()
+            self.tab_bar.removeTab(index)
+        tab = self.tab_bar.addTab(editor, name)
+        self.tab_bar.setCurrentIndex(tab)
+        
+        # Set focus to editor
+        editor.setFocus()
+
+    def newShortcut(self, action, shortcut):
+        """A function so I can make keyboard shortcuts"""
+        Action = QtGui.QAction(self)
+        Action.setShortcut(shortcut)
+        Action.triggered.connect(action)
+        return Action
     
     def openFile(self, filename=False):
         """Open a new file"""
@@ -127,55 +184,11 @@ class IDLE_R(QtGui.QMainWindow):
             if editor.isUntitled and not editor.document().isModified():
                 self.newFile(name, True, text, filename)
                 return
-        self.newFile(name, False, text)
+        self.newFile(name, False, text, filename)
     
     def openRecentFile(self, action):
         """Open a recent file"""
         self.openFile(action.stored)
-    
-    def newAction(self, name, action, shortcut=None):
-        """A function so I can make actions"""
-        Action = QtGui.QAction(name, self)
-        Action.triggered.connect(action)
-        if shortcut:
-            Action.setShortcut(shortcut)
-        return Action
-        
-    def newFile(self, name=None, ow=False, text=None, filename=None):
-        """Make a new file"""
-        if name:
-            name = name
-        else:
-            name = "untitled{}.py".format(self.file_index)
-            self.file_index += 1
-        
-        # Make editor and configure
-        editor = Editor()
-        editor.isUntitled = True  # Makes untitled files distinguishable
-        editor.textChanged.connect(self.unsaved)
-        
-        # Add given text if any
-        if text:
-            editor.isUntitled = False
-            editor.fname = filename
-            editor.setText(text)
-        
-        # Add the tab
-        if ow:
-            index = self.tab_bar.currentIndex()
-            self.tab_bar.removeTab(index)
-        tab = self.tab_bar.addTab(editor, name)
-        self.tab_bar.setCurrentIndex(tab)
-        
-        # Set focus to editor
-        editor.setFocus()
-
-    def newShortcut(self, action, shortcut):
-        """A function so I can make keyboard shortcuts"""
-        Action = QtGui.QAction(self)
-        Action.setShortcut(shortcut)
-        Action.triggered.connect(action)
-        return Action
     
     def readRecentFile(self):
         """Returns the recent files"""
@@ -196,18 +209,18 @@ class IDLE_R(QtGui.QMainWindow):
     def saveFile(self, saveAs=False):
         """Save current file"""
         editor = self.tab_bar.currentWidget()
+        pos = editor.textCursor().anchor()
         
-        # Add newline at end of file while retaining cursor pos
+        # Append newline to end of file
         try:
             last = editor.toPlainText()[-1]
         except IndexError:
             last = ''
         
-        if last != '\n':
-            pos = editor.textCursor().position()
-            editor.setText(editor.toPlainText() + '\n')
-            editor.textCursor().setPosition(pos)
-        
+        if last != '\n' and last != '':
+            editor.append('')
+
+        # Save file
         if editor.isUntitled or saveAs:
             # Get name for the file to save to
             fsave = QtGui.QFileDialog.getSaveFileName
@@ -229,15 +242,26 @@ class IDLE_R(QtGui.QMainWindow):
             # Read file and display
             text = open(filename, 'r').read()
             name = os.path.split(str(filename))[-1]
-            self.newFile(name, True, text, filename)
+            self.newFile(name, True, text, filename, pos)
             
         else:
             # Write to file
+            filename = editor.fname
             with open(editor.fname, 'w') as f:
                 f.write(editor.toPlainText())
         
+        # Add to recent files
+        if not filename in self.readRecentFile():
+            self.writeRecentFile(filename)
+            self.addMenuActions()
+        
+        # Make isUntitled false
+        editor.isUntitled = False
+        
         # Fix editor vars
+        #editor.textCursor().setPosition(pos)
         editor.setModified(False)
+        self.unsaved()
     
     def template(self):
         """Make a new file with a template"""
