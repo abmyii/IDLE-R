@@ -193,6 +193,8 @@ class IDLE_R(QtGui.QMainWindow):
         editor = Editor()
         editor.isUntitled = True  # Makes untitled files distinguishable
         editor.textChanged.connect(self.unsaved)
+        editor.setTabStopWidth(editor.tabStopWidth() / 2)
+        editor.setCursorWidth(editor.cursorWidth() * 2)
         
         # Add given text if any
         if text:
