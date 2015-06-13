@@ -29,6 +29,7 @@ from datetime import date
 from src.editor import Editor
 from src.tabBar import TabWidget
 from src.extended import QAction
+from src.highlighter import SyntaxHighlighter
 
 class IDLE_R(QtGui.QMainWindow):
     
@@ -209,6 +210,16 @@ class IDLE_R(QtGui.QMainWindow):
             self.tab_bar.removeTab(index)
         tab = self.tab_bar.addTab(editor, name)
         self.tab_bar.setCurrentIndex(tab)
+        
+        # Font
+        font = QtGui.QFont()
+        font.setFamily('Courier')
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+        editor.setFont(font)
+        
+        # Syntax highlighting
+        SyntaxHighlighter(editor)
         
         # Set focus to editor
         editor.setFocus()

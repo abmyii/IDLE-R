@@ -31,3 +31,12 @@ class Editor(QtGui.QTextEdit):
         
     def setModified(self, modified):
         return self.document().setModified(modified)
+    
+    def keyPressEvent(self, QKeyEvent):
+        if QKeyEvent.text() == '\t':
+            self.textCursor().beginEditBlock()
+            for i in range(4):
+                self.insertPlainText(' ')
+            self.textCursor().endEditBlock()
+        else:
+            super(Editor, self).keyPressEvent(QKeyEvent)
