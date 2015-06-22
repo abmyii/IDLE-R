@@ -34,4 +34,9 @@ class QAction(QtGui.QAction):
     def doAction(self):
         self.action(self)
 
-
+class StatusBar(QtGui.QStatusBar):
+    widget = None
+    
+    def addPermanentWidget(self, widget):
+        self.widget = widget
+        super(StatusBar, self).addPermanentWidget(widget)

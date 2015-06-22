@@ -28,7 +28,7 @@ from datetime import date
 # Import all parts of the IDE
 from src.editor import Editor
 from src.tabBar import TabWidget
-from src.extended import QAction
+from src.extended import QAction, StatusBar
 
 class IDLE_R(QtGui.QMainWindow):
     
@@ -36,7 +36,8 @@ class IDLE_R(QtGui.QMainWindow):
         # Init & Tweak
         super(IDLE_R, self).__init__()
         self.setWindowTitle("IDLE_R")
-        self.resize(950, 600)
+        self.setMinimumSize(950, 600)
+        self.showMaximized()
         
         # Set the number for file names
         self.file_index = 1
@@ -48,12 +49,17 @@ class IDLE_R(QtGui.QMainWindow):
         # Add menubar actions
         self.addMenuActions()
         
+        # Status bar
+        self.statusBar = StatusBar()
+        self.setStatusBar(self.statusBar)
+        
         # Add toolbar
         self.tab_bar = TabWidget()
         self.tab_bar.setMovable(True)
         
         # Set tabs to be closable
         self.tab_bar.tabCloseRequested.connect(self.closeTab)
+        self.tab_bar.currentChanged.connect(self.editorUpdateStatusBar)
         self.tab_bar.setTabsClosable(True)
         
         # Set central widget
@@ -172,6 +178,10 @@ class IDLE_R(QtGui.QMainWindow):
         if editor:
             editor.cut()
     
+    def editorUpdateStatusBar(self):
+        editor = self.tab_bar.currentWidget()
+        editor.updateStatusBar()
+    
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
         Action = QtGui.QAction(name, self)
@@ -189,7 +199,7 @@ class IDLE_R(QtGui.QMainWindow):
             self.file_index += 1
         
         # Make editor and configure
-        editor = Editor()
+        editor = Editor(self.statusBar)
         editor.isUntitled = True  # Makes untitled files distinguishable
         editor.textChanged.connect(self.unsaved)
         editor.setTabStopWidth(editor.tabStopWidth() / 2)

@@ -28,13 +28,21 @@ class Editor(QtGui.QTextEdit):
     isUntitled = False
     fname = ''
     
-    def __init__(self):
+    def __init__(self, statusBar):
         super(Editor, self).__init__()
+        
+        # Status bar
+        self.statusBar = statusBar
         
         # Highlighting current line
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                      self.highlight_current_line)
         self.highlight_current_line()
+                     
+        # Update status bar
+        self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
+                     self.updateStatusBar)
+        self.updateStatusBar()
         
         # Syntax highlighting
         SyntaxHighlighter(self)
@@ -78,3 +86,13 @@ class Editor(QtGui.QTextEdit):
         selection.cursor.clearSelection()
         self.extraSelections.append(selection)
         self.setExtraSelections(self.extraSelections)
+    
+    def updateStatusBar(self):
+        message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)
+        message += ' '
+        message += 'Col: %s' % self.textCursor().positionInBlock()
+        #self.statusBar.showMessage(message)
+        parent = self.statusBar.parentWidget()
+        if self.statusBar.widget:
+            self.statusBar.removeWidget(self.statusBar.widget)
+        self.statusBar.addPermanentWidget(QtGui.QLabel(message))

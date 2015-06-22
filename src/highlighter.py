@@ -25,28 +25,6 @@ from PyQt4 import Qt, QtCore, QtGui
 import keyword
 import __builtin__
 
-# Taken from KhtEditor
-class BracketsInfo:
-
-    def __init__(self, character, position):
-        self.character = character
-        self.position = position
-
-# Taken from KhtEditor
-class TextBlockData(QtGui.QTextBlockUserData):
-
-    def __init__(self, parent=None):
-        super(TextBlockData, self).__init__()
-        self.braces = []
-        self.valid = False
-
-    def insert_brackets_info(self, info):
-        self.valid = True
-        self.braces.append(info)
-
-    def isValid(self):
-        return self.valid
-
 class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(SyntaxHighlighter, self).__init__(parent)
