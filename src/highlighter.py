@@ -25,45 +25,50 @@ from PyQt4 import Qt, QtCore, QtGui
 import keyword
 import __builtin__
 import re
-import pygments
-import pygments.lexers
 
-class CommentRange:
-    def __init__(self, index, length=0):
-        self.index = index
-        self.length = length
-        
-    def __lt__ (left,  right):
-        return left.index < right.index
+# Taken from KhtEditor
+class BracketsInfo:
 
+    def __init__(self, character, position):
+        self.character = character
+        self.position = position
+
+# Taken from KhtEditor
+class TextBlockData(QtGui.QTextBlockUserData):
+
+    def __init__(self, parent=None):
+        super(TextBlockData, self).__init__()
+        self.braces = []
+        self.valid = False
+
+    def insert_brackets_info(self, info):
+        self.valid = True
+        self.braces.append(info)
+
+    def isValid(self):
+        return self.valid
 
 class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
     def __init__(self, parent=None):
         super(SyntaxHighlighter, self).__init__(parent)
 
-        keywordFormat = QtGui.QTextCharFormat()
-        keywordFormat.setForeground(QtCore.Qt.red)
-        keywordPatterns = []
-        for kw in keyword.kwlist:
-            if not kw == 'print':
-                keywordPatterns.append('\\b' + kw + '\\b')
-        self.highlightingRules = [(pattern, keywordFormat)
-                for pattern in keywordPatterns]
-        
+        # Used and edited from IDLE codebase
         functionFormat = QtGui.QTextCharFormat()
         functionFormat.setForeground(QtCore.Qt.blue)
-        self.highlightingRules.append((" [A-Za-z0-9_]+(?=\\()",
-                functionFormat))
+        self.highlightingRules = [(r'\bdef\b\s*(\w+)', functionFormat)]
+        self.highlightingRules.append((r'\bclass\b\s*(\w+)', functionFormat))
+        
+        keywordFormat = QtGui.QTextCharFormat()
+        keywordFormat.setForeground(QtCore.Qt.red)
+        for kw in keyword.kwlist:
+            if not kw == 'print':
+                self.highlightingRules.append(('\\b' + kw + '\\b', keywordFormat))
 
         keywordFormat = QtGui.QTextCharFormat()
         keywordFormat.setForeground(QtCore.Qt.darkMagenta)
-        keywordPatterns = []
         for d in dir(__builtin__):
             if not '_' in d:
-                keywordPatterns.append('\\b' + d + '\\b')
-        highlightingRules = [(pattern, keywordFormat)
-                for pattern in keywordPatterns]
-        for rule in highlightingRules: self.highlightingRules.append(rule)
+                self.highlightingRules.append(('\\b' + d + '\\b', keywordFormat))
 
         commentFormat = QtGui.QTextCharFormat()
         commentFormat.setForeground(QtCore.Qt.darkRed)
@@ -73,59 +78,68 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
         self.stringFormat = QtGui.QTextCharFormat()
         self.stringFormat.setForeground(QtCore.Qt.darkGreen)
         self.stringprefix = stringprefix = r"(\br|u|ur|R|U|UR|Ur|uR|b|B|br|Br|bR|BR)?"
-        self.highlightingRules.append((stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?",
+        self.highlightingRules.append((stringprefix + r"""((?!''')'[^']*'?|(?!\""")"[^"]*"?)""",
                 self.stringFormat))
-        self.highlightingRules.append((stringprefix +  r'"[^"\\\n]*(\\.[^"\\\n]*)*"?',
-                self.stringFormat))
+        
+        # Tri strings
+        self.tri_single = QtCore.QRegExp(stringprefix + r"""'''(?!")""")
+        self.tri_double = QtCore.QRegExp(stringprefix + r'''"""(?!')''')
+        self.tri_single = ( self.tri_single, 1, self.stringFormat )
+        self.tri_double = ( self.tri_double, 2, self.stringFormat )
 
     def highlightBlock(self, text):
-        text = str(self.document().toPlainText())
-        lex = pygments.lex(text, pygments.lexers.PythonLexer())
+        for pattern, format in self.highlightingRules:
+            expression = re.compile(pattern, re.S).finditer(text)
+            while True:
+                try:
+                    expr = expression.next()
+                    index = expr.start()
+                    end = expr.end()
+                    length = end - index
+                    self.setFormat(index, length, format)
+                except StopIteration:  # End of iter
+                    break
         
-        ##types = ('"""', "'''")
-        #types = ('"""')
-        #for strType in types:
-            #index = types.index(strType) + 1
-            
-            ## Comment expressions
-            #self.commentStartExpression = QtCore.QRegExp(self.stringprefix + strType)
-            #self.commentEndExpression = QtCore.QRegExp(strType)
+        self.match_multiline(text, *self.tri_single)
+        self.match_multiline(text, *self.tri_double)
+    
+    # Taken from KhtEditor
+    def match_multiline(self, text, delimiter, in_state, style):
+        """Do highlighting of multi-line strings. ``delimiter`` should be a
+        ``QRegExp`` for triple-single-quotes or triple-double-quotes, and
+        ``in_state`` should be a unique integer to represent the corresponding
+        state changes when inside those strings. Returns True if we're still
+        inside a multi-line string when this function is finished.
+        """
+        # If inside triple-single quotes, start at 0
+        if self.previousBlockState() == in_state:
+            start = 0
+            add = 0
+        # Otherwise, look for the delimiter on this line
+        else:
+            start = delimiter.indexIn(text)
+            # Move past this match
+            add = delimiter.matchedLength()
 
-            #self.setCurrentBlockState(0)
-    
-            #startIndex = 0
-            #if self.previousBlockState() != 1:
-                #startIndex = self.commentStartExpression.indexIn(text)
-    
-            #while startIndex >= 0:
-                #endIndex = self.commentEndExpression.indexIn(text, startIndex + 1)
-    
-                #if endIndex == -1:
-                    #self.setCurrentBlockState(index)
-                    #commentLength = len(text) - startIndex
-                #else:
-                    #commentLength = endIndex - startIndex + self.commentEndExpression.matchedLength()
-    
-                #self.setFormat(startIndex, commentLength,
-                        #self.stringFormat)
-                #startIndex = self.commentStartExpression.indexIn(text,
-                        #startIndex + commentLength)
-        
-        #for pattern, format in self.highlightingRules:
-            #expression = re.compile(pattern, re.S).finditer(text)
-            #while True:
-                #try:
-                    #expr = expression.next()
-                    #index = expr.start()
-                    #end = expr.end()
-                    #length = end - index
-                    #if pattern == " [A-Za-z0-9_]+(?=\\()":
-                        #if 'class' in [text[index-5:index]] or 'def' in [text[index-3:index]]:
-                            #self.setFormat(index, length, format)
-                    #elif '"' in pattern or "'" in pattern:
-                        #if not self.previousBlockState() in [1, 2]:
-                            #self.setFormat(index, length, format)
-                    #else:
-                        #self.setFormat(index, length, format)
-                #except StopIteration:  # End of iter
-                    #break
+        # As long as there's a delimiter match on this line...
+        while start >= 0:
+            # Look for the ending delimiter
+            end = delimiter.indexIn(text, start + add)
+            # Ending delimiter on this line?
+            if end >= add:
+                length = end - start + add + delimiter.matchedLength()
+                self.setCurrentBlockState(0)
+            # No; multi-line string
+            else:
+                self.setCurrentBlockState(in_state)
+                length = len(text) - start + add
+            # Apply formatting
+            self.setFormat(start, length, style)
+            # Look for the next match
+            start = delimiter.indexIn(text, start + length)
+
+        # Return True if still inside a multi-line string, False otherwise
+        if self.currentBlockState() == in_state:
+            return True
+        else:
+            return False
