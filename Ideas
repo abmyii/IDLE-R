@@ -1,1 +1,1 @@
-Use (widget).addAction for auto-completion
+Use (widget).addAction for auto-completion. For __init__ of the widget, set parent to QTextEdit
