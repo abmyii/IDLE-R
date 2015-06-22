@@ -24,7 +24,6 @@
 from PyQt4 import Qt, QtCore, QtGui
 import keyword
 import __builtin__
-import re
 
 # Taken from KhtEditor
 class BracketsInfo:
@@ -55,31 +54,31 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
         # Used and edited from IDLE codebase
         functionFormat = QtGui.QTextCharFormat()
         functionFormat.setForeground(QtCore.Qt.blue)
-        self.highlightingRules = [(r'\bdef\b\s*(\w+)', functionFormat)]
-        self.highlightingRules.append((r'\bclass\b\s*(\w+)', functionFormat))
+        self.highlightingRules = [(QtCore.QRegExp(r'\bdef\b\s*(\w+)'), functionFormat)]
+        self.highlightingRules.append((QtCore.QRegExp(r'\bclass\b\s*(\w+)'), functionFormat))
         
         keywordFormat = QtGui.QTextCharFormat()
         keywordFormat.setForeground(QtCore.Qt.red)
         for kw in keyword.kwlist:
             if not kw == 'print':
-                self.highlightingRules.append(('\\b' + kw + '\\b', keywordFormat))
+                self.highlightingRules.append((QtCore.QRegExp('\\b' + kw + '\\b'), keywordFormat))
 
         keywordFormat = QtGui.QTextCharFormat()
         keywordFormat.setForeground(QtCore.Qt.darkMagenta)
         for d in dir(__builtin__):
             if not '_' in d:
-                self.highlightingRules.append(('\\b' + d + '\\b', keywordFormat))
-
-        commentFormat = QtGui.QTextCharFormat()
-        commentFormat.setForeground(QtCore.Qt.darkRed)
-        self.highlightingRules.append((r"#[^\n]*",
-                commentFormat))
+                self.highlightingRules.append((QtCore.QRegExp('\\b' + d + '\\b'), keywordFormat))
         
         self.stringFormat = QtGui.QTextCharFormat()
         self.stringFormat.setForeground(QtCore.Qt.darkGreen)
         self.stringprefix = stringprefix = r"(\br|u|ur|R|U|UR|Ur|uR|b|B|br|Br|bR|BR)?"
-        self.highlightingRules.append((stringprefix + r"""((?!''')'[^']*'?|(?!\""")"[^"]*"?)""",
+        self.highlightingRules.append((QtCore.QRegExp(stringprefix + r"""((?!''')'[^']*'?|(?!\""")"[^"]*"?)"""),
                 self.stringFormat))
+        
+        commentFormat = QtGui.QTextCharFormat()
+        commentFormat.setForeground(QtCore.Qt.darkRed)
+        self.highlightingRules.append((QtCore.QRegExp(r"#[^\n]*"),
+                commentFormat))
         
         # Tri strings
         self.tri_single = QtCore.QRegExp(stringprefix + r"""'''(?!")""")
@@ -89,16 +88,12 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
 
     def highlightBlock(self, text):
         for pattern, format in self.highlightingRules:
-            expression = re.compile(pattern, re.S).finditer(text)
-            while True:
-                try:
-                    expr = expression.next()
-                    index = expr.start()
-                    end = expr.end()
-                    length = end - index
-                    self.setFormat(index, length, format)
-                except StopIteration:  # End of iter
-                    break
+            expression = pattern
+            index = expression.indexIn(text)
+            while index >= 0:
+                length = expression.matchedLength()
+                self.setFormat(index, length, format)
+                index = expression.indexIn(text, index + length)
         
         self.match_multiline(text, *self.tri_single)
         self.match_multiline(text, *self.tri_double)

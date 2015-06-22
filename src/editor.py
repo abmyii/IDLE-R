@@ -47,16 +47,20 @@ class Editor(QtGui.QTextEdit):
     
     def keyPressEvent(self, QKeyEvent):
         """Handle keypress events"""
-        
         if QKeyEvent.text() == '\r':
+            space = ''
             pos = self.textCursor().position()
             if pos >= 1:
                 char = self.document().characterAt(pos - 1)
                 if char == QtCore.QChar(0x3a):
-                    self.textCursor().beginEditBlock()
-                    self.insertPlainText('\n\t')
-                    self.textCursor().endEditBlock()
-                    return
+                    space += '\t'
+            for char in self.document().findBlock(pos).text():
+                if char == '\t':
+                    space += '\t'
+            self.textCursor().beginEditBlock()
+            self.insertPlainText('\n' + space)
+            self.textCursor().endEditBlock()
+            return
 
         super(Editor, self).keyPressEvent(QKeyEvent)
     
