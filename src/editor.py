@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
 #  editor.py
@@ -21,10 +22,22 @@
 #  
 #  
 from PyQt4 import Qt, QtCore, QtGui
+from highlighter import SyntaxHighlighter
 
 class Editor(QtGui.QTextEdit):
     isUntitled = False
     fname = ''
+    
+    def __init__(self):
+        super(Editor, self).__init__()
+        
+        # Highlighting current line
+        self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
+                     self.highlight_current_line)
+        self.highlight_current_line()
+        
+        # Syntax highlighting
+        SyntaxHighlighter(self)
     
     def isModified(self):
         return self.document().isModified()
@@ -44,5 +57,20 @@ class Editor(QtGui.QTextEdit):
                     self.insertPlainText('\n\t')
                     self.textCursor().endEditBlock()
                     return
-                    
+
         super(Editor, self).keyPressEvent(QKeyEvent)
+    
+    def highlight_current_line(self):
+        self.extraSelections = []
+        
+        block = self.textCursor()
+        selection = self.ExtraSelection()
+        lineColor = QtGui.QColor("#858585")
+        lineColor.setAlpha(20)
+
+        selection.format.setBackground(lineColor)
+        selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
+        selection.cursor = self.textCursor()
+        selection.cursor.clearSelection()
+        self.extraSelections.append(selection)
+        self.setExtraSelections(self.extraSelections)

@@ -25,6 +25,17 @@ from PyQt4 import Qt, QtCore, QtGui
 import keyword
 import __builtin__
 import re
+import pygments
+import pygments.lexers
+
+class CommentRange:
+    def __init__(self, index, length=0):
+        self.index = index
+        self.length = length
+        
+    def __lt__ (left,  right):
+        return left.index < right.index
+
 
 class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
     def __init__(self, parent=None):
@@ -36,12 +47,12 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
         for kw in keyword.kwlist:
             if not kw == 'print':
                 keywordPatterns.append('\\b' + kw + '\\b')
-        self.highlightingRules = [(QtCore.QRegExp(pattern), keywordFormat)
+        self.highlightingRules = [(pattern, keywordFormat)
                 for pattern in keywordPatterns]
         
         functionFormat = QtGui.QTextCharFormat()
         functionFormat.setForeground(QtCore.Qt.blue)
-        self.highlightingRules.append((QtCore.QRegExp(" [A-Za-z0-9_]+(?=\\()"),
+        self.highlightingRules.append((" [A-Za-z0-9_]+(?=\\()",
                 functionFormat))
 
         keywordFormat = QtGui.QTextCharFormat()
@@ -50,32 +61,71 @@ class SyntaxHighlighter(QtGui.QSyntaxHighlighter):
         for d in dir(__builtin__):
             if not '_' in d:
                 keywordPatterns.append('\\b' + d + '\\b')
-        highlightingRules = [(QtCore.QRegExp(pattern), keywordFormat)
+        highlightingRules = [(pattern, keywordFormat)
                 for pattern in keywordPatterns]
         for rule in highlightingRules: self.highlightingRules.append(rule)
 
         commentFormat = QtGui.QTextCharFormat()
         commentFormat.setForeground(QtCore.Qt.darkRed)
-        self.highlightingRules.append((QtCore.QRegExp(r"#[^\n]*"),
+        self.highlightingRules.append((r"#[^\n]*",
                 commentFormat))
         
-        stringFormat = QtGui.QTextCharFormat()
-        stringFormat.setForeground(QtCore.Qt.darkGreen)
-        stringprefix = r"(\br|u|ur|R|U|UR|Ur|uR|b|B|br|Br|bR|BR)?"
-        self.highlightingRules.append((QtCore.QRegExp(stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?"),
-                stringFormat))
-        self.highlightingRules.append((QtCore.QRegExp(stringprefix +  r'"[^"\\\n]*(\\.[^"\\\n]*)*"?'),
-                stringFormat))
-        self.highlightingRules.append((QtCore.QRegExp(stringprefix +  r"'''[^'\\]*((\\.|'(?!''))[^'\\]*)*(''')?"),
-                stringFormat))
-        self.highlightingRules.append((QtCore.QRegExp(stringprefix +  r'"""[^"\\]*((\\.|"(?!""))[^"\\]*)*(""")?'),
-                stringFormat))
+        self.stringFormat = QtGui.QTextCharFormat()
+        self.stringFormat.setForeground(QtCore.Qt.darkGreen)
+        self.stringprefix = stringprefix = r"(\br|u|ur|R|U|UR|Ur|uR|b|B|br|Br|bR|BR)?"
+        self.highlightingRules.append((stringprefix + r"'[^'\\\n]*(\\.[^'\\\n]*)*'?",
+                self.stringFormat))
+        self.highlightingRules.append((stringprefix +  r'"[^"\\\n]*(\\.[^"\\\n]*)*"?',
+                self.stringFormat))
 
     def highlightBlock(self, text):
-        for pattern, format in self.highlightingRules:
-            expression = QtCore.QRegExp(pattern)
-            index = expression.indexIn(text)
-            while index >= 0:
-                length = expression.matchedLength()
-                self.setFormat(index, length, format)
-                index = expression.indexIn(text, index + length)
+        text = str(self.document().toPlainText())
+        lex = pygments.lex(text, pygments.lexers.PythonLexer())
+        
+        ##types = ('"""', "'''")
+        #types = ('"""')
+        #for strType in types:
+            #index = types.index(strType) + 1
+            
+            ## Comment expressions
+            #self.commentStartExpression = QtCore.QRegExp(self.stringprefix + strType)
+            #self.commentEndExpression = QtCore.QRegExp(strType)
+
+            #self.setCurrentBlockState(0)
+    
+            #startIndex = 0
+            #if self.previousBlockState() != 1:
+                #startIndex = self.commentStartExpression.indexIn(text)
+    
+            #while startIndex >= 0:
+                #endIndex = self.commentEndExpression.indexIn(text, startIndex + 1)
+    
+                #if endIndex == -1:
+                    #self.setCurrentBlockState(index)
+                    #commentLength = len(text) - startIndex
+                #else:
+                    #commentLength = endIndex - startIndex + self.commentEndExpression.matchedLength()
+    
+                #self.setFormat(startIndex, commentLength,
+                        #self.stringFormat)
+                #startIndex = self.commentStartExpression.indexIn(text,
+                        #startIndex + commentLength)
+        
+        #for pattern, format in self.highlightingRules:
+            #expression = re.compile(pattern, re.S).finditer(text)
+            #while True:
+                #try:
+                    #expr = expression.next()
+                    #index = expr.start()
+                    #end = expr.end()
+                    #length = end - index
+                    #if pattern == " [A-Za-z0-9_]+(?=\\()":
+                        #if 'class' in [text[index-5:index]] or 'def' in [text[index-3:index]]:
+                            #self.setFormat(index, length, format)
+                    #elif '"' in pattern or "'" in pattern:
+                        #if not self.previousBlockState() in [1, 2]:
+                            #self.setFormat(index, length, format)
+                    #else:
+                        #self.setFormat(index, length, format)
+                #except StopIteration:  # End of iter
+                    #break
