@@ -22,7 +22,7 @@
 #  
 #  
 from PyQt4 import Qt, QtCore, QtGui
-from highlighter import SyntaxHighlighter
+from highlighter import PygmentsHighlighter
 
 class Editor(QtGui.QTextEdit):
     isUntitled = False
@@ -45,7 +45,7 @@ class Editor(QtGui.QTextEdit):
         self.updateStatusBar()
         
         # Syntax highlighting
-        SyntaxHighlighter(self)
+        PygmentsHighlighter(self)
     
     def isModified(self):
         return self.document().isModified()
@@ -91,7 +91,6 @@ class Editor(QtGui.QTextEdit):
         message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()
-        #self.statusBar.showMessage(message)
         parent = self.statusBar.parentWidget()
         if self.statusBar.widget:
             self.statusBar.removeWidget(self.statusBar.widget)

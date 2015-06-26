@@ -180,7 +180,8 @@ class IDLE_R(QtGui.QMainWindow):
     
     def editorUpdateStatusBar(self):
         editor = self.tab_bar.currentWidget()
-        editor.updateStatusBar()
+        if editor:
+            editor.updateStatusBar()
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
@@ -385,13 +386,14 @@ class IDLE_R(QtGui.QMainWindow):
     def unsaved(self):
         """Checks if the current file is saved/unsaved"""
         editor = self.tab_bar.currentWidget()
-        index = self.tab_bar.currentIndex()
-        name = self.tab_bar.tabText(index)
-        if editor.isModified():
-            if not '* ' in name:
-                self.tab_bar.setTabText(index, '* ' + name)
-        else:
-            self.tab_bar.setTabText(index, name.replace('* ', ''))
+        if editor:
+            index = self.tab_bar.currentIndex()
+            name = self.tab_bar.tabText(index)
+            if editor.isModified():
+                if not '* ' in name:
+                    self.tab_bar.setTabText(index, '* ' + name)
+            else:
+                self.tab_bar.setTabText(index, name.replace('* ', ''))
     
     def writeRecentFile(self, filename):
         """Write the recent files"""

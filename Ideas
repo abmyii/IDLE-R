@@ -1,1 +1,11 @@
+Make EditorWidget for editor & pyshell & Where the self.tab_bar.currentWidget(EditorWidget) rets the editor
+Add all menuBar options
+When import, add all namespaces of the module for auto-completion
+When there are braces, show doc str of the module and arg called with showToolTip
 Use (widget).addAction for auto-completion. For __init__ of the widget, set parent to QTextEdit
+? Make pygments highlighter using lexers and tokens
+
+
+# Key bindings
+F5 = Python2 Run
+F6 = Python3 Run
