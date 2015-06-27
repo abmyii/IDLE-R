@@ -27,6 +27,7 @@ from highlighter import PygmentsHighlighter
 class Editor(QtGui.QTextEdit):
     isUntitled = False
     fname = ''
+    indentation = 0
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
@@ -46,6 +47,20 @@ class Editor(QtGui.QTextEdit):
         
         # Syntax highlighting
         PygmentsHighlighter(self)
+        
+        # Disable line wrapping
+        self.setLineWrapMode(0)
+        
+        # Font
+        font = QtGui.QFont()
+        font.setFamily('Courier')
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+        self.setFont(font)
+        
+        # Tab & Cursor width
+        self.setTabStopWidth(self.tabStopWidth() / 2)
+        self.setCursorWidth(self.cursorWidth() * 2)
     
     def isModified(self):
         return self.document().isModified()
@@ -55,21 +70,44 @@ class Editor(QtGui.QTextEdit):
     
     def keyPressEvent(self, QKeyEvent):
         """Handle keypress events"""
+        pos = self.textCursor().position()
+        
+        # Insert spaces instead of tabs
+        if QKeyEvent.text() == '\t':
+            self.insertPlainText('    ')
+            return
+            
         if QKeyEvent.text() == '\r':
             space = ''
-            pos = self.textCursor().position()
             if pos >= 1:
                 char = self.document().characterAt(pos - 1)
                 if char == QtCore.QChar(0x3a):
-                    space += '\t'
+                    space += '    '
+            
+            # Add last line's tabs to this line (keep indentaition)
             for char in self.document().findBlock(pos).text():
-                if char == '\t':
-                    space += '\t'
+                if char != ' ':
+                    break
+                space += ' '
+                    
+            # Dedent if last word is pass or continue or break
+            last = str(self.document().findBlock(pos).text()).strip()
+            if last == 'break' or last == 'continue' or last == 'pass':
+                space = space[:-4]
+            
+            # Insert text and space
             self.textCursor().beginEditBlock()
             self.insertPlainText('\n' + space)
             self.textCursor().endEditBlock()
             return
-
+        
+        if QKeyEvent.text() == '\b':
+            posInBlock = self.textCursor().positionInBlock()
+            txt = self.document().findBlock(pos).text()[posInBlock-4:posInBlock]
+            if txt == '    ':
+                for i in range(4):
+                    self.textCursor().deletePreviousChar()
+                return
         super(Editor, self).keyPressEvent(QKeyEvent)
     
     def highlight_current_line(self):

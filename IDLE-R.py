@@ -37,7 +37,6 @@ class IDLE_R(QtGui.QMainWindow):
         super(IDLE_R, self).__init__()
         self.setWindowTitle("IDLE_R")
         self.setMinimumSize(950, 600)
-        self.showMaximized()
         
         # Set the number for file names
         self.file_index = 1
@@ -203,12 +202,9 @@ class IDLE_R(QtGui.QMainWindow):
         editor = Editor(self.statusBar)
         editor.isUntitled = True  # Makes untitled files distinguishable
         editor.textChanged.connect(self.unsaved)
-        editor.setTabStopWidth(editor.tabStopWidth() / 2)
-        editor.setCursorWidth(editor.cursorWidth() * 2)
         
         # Add given text if any
         if text:
-            text = text.replace('    ', '\t')
             editor.isUntitled = False
             editor.fname = fname
             editor.setText(text)
@@ -223,13 +219,6 @@ class IDLE_R(QtGui.QMainWindow):
             self.tab_bar.removeTab(index)
         tab = self.tab_bar.addTab(editor, name)
         self.tab_bar.setCurrentIndex(tab)
-        
-        # Font
-        font = QtGui.QFont()
-        font.setFamily('Courier')
-        font.setFixedPitch(True)
-        font.setPointSize(10)
-        editor.setFont(font)
         
         # Set focus to editor
         editor.setFocus()
@@ -330,7 +319,6 @@ class IDLE_R(QtGui.QMainWindow):
             
             # Write to file
             with open(filename, 'w') as f:
-                text = editor.toPlainText().replace('\t', '    ')
                 f.write(text)
             
             # Read file and display
@@ -342,7 +330,6 @@ class IDLE_R(QtGui.QMainWindow):
             # Write to file
             filename = editor.fname
             with open(editor.fname, 'w') as f:
-                text = editor.toPlainText().replace('\t', '    ')
                 f.write(text)
         
         # Add to recent files

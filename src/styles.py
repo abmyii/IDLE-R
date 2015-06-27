@@ -13,16 +13,16 @@ class PythonStyle(Style):
     default_style = ""
 
     styles = {
-        Whitespace:                 '#ffffff', # Whitespace?
+        Whitespace:                 '#ffffff', # Whitespace (html)
 
-        Comment:                    '#800000', # Comments
-        Comment.Preproc:            '#800000', # Comments
-        Comment.Special:            '#800000', # Comments
+        Comment:                    '#dd0000', # Comments
+        Comment.Preproc:            '#dd0000', # Comments (?)
+        Comment.Special:            '#dd0000', # Comments (?)
 
-        Keyword:                    '#ff0000', # Keywords
-        Keyword.Type:               '#ff0000', # Keywords
+        Keyword:                    '#ff7700', # Keywords
+        Keyword.Type:               '#ff7700', # Keywords
 
-        Operator.Word:              '#ff0000', # in, and, or (and such)
+        Operator.Word:              '#ff7700', # in, and, or (and such)
 
         Name.Builtin:               '#800080', # all, abs (and such)
         Name.Builtin.Pseudo:        '#800080', # self, True, False
