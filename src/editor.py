@@ -28,6 +28,7 @@ class Editor(QtGui.QTextEdit):
     isUntitled = False
     fname = ''
     indentation = 0
+    find_text = ''
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
@@ -61,6 +62,32 @@ class Editor(QtGui.QTextEdit):
         # Tab & Cursor width
         self.setTabStopWidth(self.tabStopWidth() / 2)
         self.setCursorWidth(self.cursorWidth() * 2)
+    
+    def find(self, text=None, pos=None):
+        # Check and get text if none was given
+        if not text:
+            text = QtGui.QInputDialog.getText(self, "Find",
+                                          "Search For:", QtGui.QLineEdit.Normal,
+                                          )[0]
+        
+        # If got text, then start finding
+        if str(text):
+            # First, check there are occurences of the search text
+            # in the document, otherwise just leave it.
+            if text[0] in self.toPlainText():
+                self.find_text = text[0]
+                
+                # Start search from <pos> if given
+                if pos == None:
+                    pos = self.textCursor().position()
+                
+                # Replace current cursor if there is a new one given
+                cursor = self.document().find(self.find_text, pos)
+                if cursor.hasSelection():
+                    self.setTextCursor(cursor)
+                else:
+                    # Otherwise try searching from the beginning of the document
+                    self.find(text[0], 0)
     
     def isModified(self):
         return self.document().isModified()

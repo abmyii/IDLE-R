@@ -5,13 +5,17 @@ When import, add all namespaces of the module for auto-completion
 
 When there are braces, show doc str of the module and arg called with showToolTip
 
-Make my own console (shell) using QtGui.QDockWidget, and add it to main window 
-using self.addDockWidget.
+Bracket matching
 
 Use (widget).addAction for auto-completion. For __init__ of the widget, set parent to QTextEdit
+
+Make my own console (shell) using QtGui.QDockWidget, and add it to main window 
+using self.addDockWidget.
 
 Make colorscheme customizable (and editor bg?) ?
 
 # Key bindings
 F5 = Python2 Run
 F6 = Python3 Run
+
+Workspace saving

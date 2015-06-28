@@ -120,7 +120,7 @@ class IDLE_R(QtGui.QMainWindow):
         
         editMenu.addSeparator()
         
-        # Default edit actions
+        # Edit actions
         action = self.newAction("Cut", self.cut, "Ctrl+X")
         editMenu.addAction(action)
         action = self.newAction("Copy", self.copy, "Ctrl+C")
@@ -128,6 +128,14 @@ class IDLE_R(QtGui.QMainWindow):
         action = self.newAction("Paste", self.paste, "Ctrl+V")
         editMenu.addAction(action)
         action = self.newAction("Select All", self.selectAll, "Ctrl+A")
+        editMenu.addAction(action)
+        
+        editMenu.addSeparator()
+        
+        # Edit actions continued
+        action = self.newAction("Find...", self.find, "Ctrl+F")
+        editMenu.addAction(action)
+        action = self.newAction("Find Again", self.findAgain, "Ctrl+G")
         editMenu.addAction(action)
     
     def closeEvent(self, QCloseEvent):
@@ -181,6 +189,16 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.updateStatusBar()
+        
+    def find(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.find()
+    
+    def findAgain(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.find(editor.find_text)
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
