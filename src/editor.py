@@ -23,6 +23,7 @@
 #  
 from PyQt4 import Qt, QtCore, QtGui
 from highlighter import PygmentsHighlighter
+from extended import FindDialog
 
 class Editor(QtGui.QTextEdit):
     isUntitled = False
@@ -66,16 +67,14 @@ class Editor(QtGui.QTextEdit):
     def find(self, text=None, pos=None):
         # Check and get text if none was given
         if not text:
-            text = QtGui.QInputDialog.getText(self, "Find",
-                                          "Search For:", QtGui.QLineEdit.Normal,
-                                          )[0]
+            text = FindDialog().exec_()
         
         # If got text, then start finding
         if str(text):
             # First, check there are occurences of the search text
             # in the document, otherwise just leave it.
-            if text[0] in self.toPlainText():
-                self.find_text = text[0]
+            if text in self.toPlainText():
+                self.find_text = text
                 
                 # Start search from <pos> if given
                 if pos == None:
@@ -87,7 +86,7 @@ class Editor(QtGui.QTextEdit):
                     self.setTextCursor(cursor)
                 else:
                     # Otherwise try searching from the beginning of the document
-                    self.find(text[0], 0)
+                    self.find(text, 0)
     
     def isModified(self):
         return self.document().isModified()

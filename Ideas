@@ -10,7 +10,7 @@ Bracket matching
 Use (widget).addAction for auto-completion. For __init__ of the widget, set parent to QTextEdit
 
 Make my own console (shell) using QtGui.QDockWidget, and add it to main window 
-using self.addDockWidget.
+using self.addDockWidget. (? Use ipython console?)
 
 Make colorscheme customizable (and editor bg?) ?
 
@@ -19,3 +19,4 @@ F5 = Python2 Run
 F6 = Python3 Run
 
 Workspace saving
+Project browsing
