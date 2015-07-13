@@ -102,7 +102,7 @@ class FindDialog(QtGui.QDialog):
         self.setWindowTitle("Search Dialog")
     
     def close_(self):
-        self.close()
+        super(FindDialog, self).close()
         self._succesful = False
     
     def exec_(self):
