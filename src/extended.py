@@ -43,42 +43,44 @@ class StatusBar(QtGui.QStatusBar):
 
 class FindDialog(QtGui.QDialog):
     
-    def __init__(self, parent=None):
+    def __init__(self, states, parent=None):
         super(FindDialog, self).__init__(parent)
+        self._succesful = True
 
         label = QtGui.QLabel("Find what:")
         self.lineEdit = QtGui.QLineEdit()
         label.setBuddy(self.lineEdit)
 
-        caseCheckBox = QtGui.QCheckBox("Match case")
-        fromStartCheckBox = QtGui.QCheckBox("Search from start")
-        fromStartCheckBox.setChecked(True)
+        self.caseSensitiveCheckBox = QtGui.QCheckBox("Match case")
+        if states['caseSensitive']:
+            self.caseSensitiveCheckBox.setCheckState(2)
+        self.fromStartCheckBox = QtGui.QCheckBox("Search from start")
+        if states['fromStart']:
+            self.fromStartCheckBox.setCheckState(2)
 
         findButton = QtGui.QPushButton("Find")
         findButton.setDefault(True)
         findButton.clicked.connect(self.close)
-
-        moreButton = QtGui.QPushButton("More")
-        moreButton.setCheckable(True)
-        moreButton.setAutoDefault(False)
+        closeButton = QtGui.QPushButton("Close")
+        closeButton.clicked.connect(self.close_)
 
         buttonBox = QtGui.QDialogButtonBox(QtCore.Qt.Vertical)
         buttonBox.addButton(findButton, QtGui.QDialogButtonBox.ActionRole)
-        buttonBox.addButton(moreButton, QtGui.QDialogButtonBox.ActionRole)
+        buttonBox.addButton(closeButton, QtGui.QDialogButtonBox.ActionRole)
 
         extension = QtGui.QWidget()
 
-        wholeWordsCheckBox = QtGui.QCheckBox("Whole words")
-        backwardCheckBox = QtGui.QCheckBox("Search backward")
-        searchSelectionCheckBox = QtGui.QCheckBox("Search selection")
-
-        moreButton.toggled.connect(extension.setVisible)
+        self.wholeWordsCheckBox = QtGui.QCheckBox("Whole words")
+        if states['wholeWord']:
+            self.wholeWordsCheckBox.setCheckState(2)
+        self.backwardCheckBox = QtGui.QCheckBox("Search backward")
+        if states['backward']:
+            self.backwardCheckBox.setCheckState(2)
 
         extensionLayout = QtGui.QVBoxLayout()
         extensionLayout.setMargin(0)
-        extensionLayout.addWidget(wholeWordsCheckBox)
-        extensionLayout.addWidget(backwardCheckBox)
-        extensionLayout.addWidget(searchSelectionCheckBox)
+        extensionLayout.addWidget(self.wholeWordsCheckBox)
+        extensionLayout.addWidget(self.backwardCheckBox)
         extension.setLayout(extensionLayout)
 
         topLeftLayout = QtGui.QHBoxLayout()
@@ -87,8 +89,8 @@ class FindDialog(QtGui.QDialog):
 
         leftLayout = QtGui.QVBoxLayout()
         leftLayout.addLayout(topLeftLayout)
-        leftLayout.addWidget(caseCheckBox)
-        leftLayout.addWidget(fromStartCheckBox)
+        leftLayout.addWidget(self.caseSensitiveCheckBox)
+        leftLayout.addWidget(self.fromStartCheckBox)
         leftLayout.addStretch(1)
 
         mainLayout = QtGui.QGridLayout()
@@ -97,7 +99,18 @@ class FindDialog(QtGui.QDialog):
         mainLayout.addWidget(buttonBox, 0, 1)
         mainLayout.addWidget(extension, 1, 0, 1, 2)
         self.setLayout(mainLayout)
+        self.setWindowTitle("Search Dialog")
+    
+    def close_(self):
+        self.close()
+        self._succesful = False
     
     def exec_(self):
         super(FindDialog, self).exec_()
-        return self.lineEdit.text()
+        checkBoxesStates = {
+            'caseSensitive': self.caseSensitiveCheckBox.checkState(),
+            'fromStart': self.fromStartCheckBox.checkState(),
+            'wholeWord': self.wholeWordsCheckBox.checkState(),
+            'backward': self.backwardCheckBox.checkState(),
+        }
+        return self.lineEdit.text(), checkBoxesStates, self._succesful

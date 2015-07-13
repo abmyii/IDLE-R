@@ -29,7 +29,12 @@ class Editor(QtGui.QTextEdit):
     isUntitled = False
     fname = ''
     indentation = 0
+    # Vars for searching for text
     find_text = ''
+    find_caseSensitive = 0
+    find_fromStart = 0
+    find_wholeWord = 0
+    find_backward = 0
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
@@ -64,24 +69,49 @@ class Editor(QtGui.QTextEdit):
         self.setTabStopWidth(self.tabStopWidth() / 2)
         self.setCursorWidth(self.cursorWidth() * 2)
     
-    def find(self, text=None, pos=None):
+    def find(self, text='', pos=None):
         # Check and get text if none was given
         if not text:
-            text = FindDialog().exec_()
+            states = {
+                'caseSensitive': self.find_caseSensitive,
+                'fromStart': self.find_fromStart,
+                'wholeWord': self.find_wholeWord,
+                'backward': self.find_backward
+            }
+            text, checkBoxesStates, successful = FindDialog(states).exec_()
+            if not successful:
+                return
+            self.find_caseSensitive = checkBoxesStates['caseSensitive']
+            self.find_fromStart = checkBoxesStates['fromStart']
+            self.find_wholeWord = checkBoxesStates['wholeWord']
+            self.find_backward = checkBoxesStates['backward']
         
         # If got text, then start finding
         if str(text):
-            # First, check there are occurences of the search text
-            # in the document, otherwise just leave it.
-            if text in self.toPlainText():
+            # Check there are occurences of the search text in the document.
+            if str(text).lower() in str(self.toPlainText()).lower():
                 self.find_text = text
                 
-                # Start search from <pos> if given
-                if pos == None:
-                    pos = self.textCursor().position()
+                # Start search from cursor pos if no pos is given
+                if pos is None: pos = self.textCursor().position()
+                
+                # Make options
+                a = b = c = QtGui.QTextDocument.FindFlag(0)
+                if self.find_caseSensitive:
+                    a = QtGui.QTextDocument.FindCaseSensitively
+                if self.find_wholeWord:
+                    b = QtGui.QTextDocument.FindWholeWords
+                if self.find_backward:
+                    c = QtGui.QTextDocument.FindBackward
+                
+                # Find text
+                if self.find_fromStart is 2:
+                    cursor = self.document().find(self.find_text, 0, a|b|c)
+                    self.find_fromStart = 1
+                else:
+                    cursor = self.document().find(self.find_text, pos, a|b|c)
                 
                 # Replace current cursor if there is a new one given
-                cursor = self.document().find(self.find_text, pos)
                 if cursor.hasSelection():
                     self.setTextCursor(cursor)
                 else:
