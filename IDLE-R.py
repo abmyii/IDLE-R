@@ -30,6 +30,23 @@ from src.editor import Editor
 from src.tabBar import TabWidget
 from src.extended import QAction, StatusBar
 
+def make_settings():
+    """
+    Makes the default settings folders and files for IDLE-R
+    """
+    # Base folder
+    home = os.environ["HOME"]
+    if not os.path.isdir(home + '/.idle-r'):
+        os.mkdir(home + '/.idle-r')
+    
+    # Workspaces folder for workspace saving
+    if not os.path.isdir(home + '/.idle-r/workspaces'):
+        os.mkdir(home + '/.idle-r/workspaces')
+    
+    # Recent files file
+    if not os.path.isfile(home + '/.idle-r/recent_files'):
+        with open(home + '/.idle-r/recent_files', 'w') as rfile: pass
+
 class IDLE_R(QtGui.QMainWindow):
     
     def __init__(self):
@@ -423,6 +440,9 @@ class IDLE_R(QtGui.QMainWindow):
                         count += 1
 
 if __name__ == '__main__':
+    # Make the default settings
+    make_settings()
+    
     # Run the IDE
     QtGui.QApplication.setStyle("plastique")
     app = QtGui.QApplication(sys.argv)

@@ -137,7 +137,7 @@ class PygmentsHighlighter(QtGui.QSyntaxHighlighter):
         index = 0
         for token, text in self._lexer.get_tokens(str(string)):
             length = len(text)
-            if text != 'self': # Dont highlight self with pink
+            if text != 'self': # Dont highlight self
                 self.setFormat(index, length, self._get_format(token))
             index += length
 
