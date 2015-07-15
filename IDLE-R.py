@@ -123,6 +123,34 @@ class IDLE_R(QtGui.QMainWindow):
         # Separator
         fileMenu.addSeparator()
         
+        # Workspace actions
+        action = self.newAction("Save Workspace", self.saveWorkspace)
+        fileMenu.addAction(action)
+        
+        # Open Workspace menu
+        menu = fileMenu.addMenu("Open Workspace")
+        
+        # Add workspaces
+        for workspace in self.getWorkspaces():
+            ws = QAction(workspace, self)
+            ws.stored = workspace
+            ws.connect(self.openWorkspace)
+            menu.addAction(ws)
+        
+        # Delete Workspace menu
+        menu = fileMenu.addMenu("Delete Workspace")
+        
+        # Add workspaces
+        for workspace in self.getWorkspaces():
+            ws = QAction(workspace, self)
+            ws.stored = workspace
+            ws.connect(self.deleteWorkspace)
+            menu.addAction(ws)
+        
+        # Separator
+        fileMenu.addSeparator()
+        
+        # Closing and quiting
         action = self.newAction("Close", self.closeTab, "Ctrl+W")
         fileMenu.addAction(action)
         action = self.newAction("Quit", self.close, "Ctrl+Q")
@@ -202,6 +230,17 @@ class IDLE_R(QtGui.QMainWindow):
         if editor:
             editor.cut()
     
+    def deleteWorkspace(self, action):
+        home = os.environ["HOME"]
+        name = action.stored
+        message = "Are you sure you want to delete the workspace " + name + "?"
+        delete = QtGui.QMessageBox.question(
+                self, 'Delete Workspace', message,
+                QtGui.QMessageBox.No|QtGui.QMessageBox.Yes)
+        if delete == QtGui.QMessageBox.Yes:
+            os.remove(home + '/.idle-r/workspaces/' + name)
+            self.addMenuActions()
+    
     def editorUpdateStatusBar(self):
         editor = self.tab_bar.currentWidget()
         if editor:
@@ -216,6 +255,13 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.find(editor.find_text)
+    
+    def getWorkspaces(self):
+        home = os.environ["HOME"]
+        workspaces = []
+        for workspace in os.listdir(home + '/.idle-r/workspaces'):
+            workspaces.append(workspace)
+        return workspaces
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
@@ -235,6 +281,7 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Make editor and configure
         editor = Editor(self.statusBar)
+        editor.fname = name
         editor.isUntitled = True  # Makes untitled files distinguishable
         editor.textChanged.connect(self.unsaved)
         
@@ -269,8 +316,7 @@ class IDLE_R(QtGui.QMainWindow):
         """Open a new file"""
         # Ask user for file
         if not filename:
-            fopen = QtGui.QFileDialog.getOpenFileName
-            filename = fopen(
+            filename = QtGui.QFileDialog.getOpenFileName(
                 self, 'Open File', os.curdir,
                 "Python files (*.py *.pyw *.py3);; All files (*)"
             )
@@ -296,6 +342,19 @@ class IDLE_R(QtGui.QMainWindow):
     def openRecentFile(self, action):
         """Open a recent file"""
         self.openFile(action.stored)
+    
+    def openWorkspace(self, action):
+        home = os.environ["HOME"]
+        with open(home + '/.idle-r/workspaces/' + action.stored) as workspace:
+            data = workspace.read().split('\n')
+            files = data[:-2]
+            tab_index = int(data[-2])
+            for f in files:
+                if os.path.isfile(f):
+                    self.openFile(f)
+                else:
+                    self.newFile(f)
+            self.tab_bar.setCurrentIndex(tab_index)
     
     def paste(self):
         editor = self.tab_bar.currentWidget()
@@ -379,6 +438,43 @@ class IDLE_R(QtGui.QMainWindow):
         editor.setModified(False)
         self.unsaved()
     
+    def saveWorkspace(self):
+        files = []
+        
+        # Check if we can save a workspace and get all of the files paths
+        for index in range(self.tab_bar.count()):
+            editor = self.tab_bar.widget(index)
+            if editor.isUntitled:
+                if editor.isModified():
+                    message = """Cannot save workspace with"""
+                    message += """\nmodified untitled documents."""
+                    QtGui.QMessageBox.information(
+                        self, 'Workspace Save Aborted!', message)
+                    return
+            files.append(editor.fname)
+            
+        # Get workspace name
+        name, ok = QtGui.QInputDialog.getText(
+                self, 'Save Workspace',
+                'What would you like this workspace to be called?:')
+        
+        # Write workspace
+        if ok:
+            # Check if we are going to overwrite another workspace
+            workspaces = self.getWorkspaces()
+            if name in workspaces:
+                message = """Are you sure you want to replace"""
+                message += """\nthe pre-existing workspace:\n"""
+                message += name
+                dupe = QtGui.QMessageBox.question(
+                        self, 'Duplicate Workspace', message,
+                        QtGui.QMessageBox.No|QtGui.QMessageBox.Yes)
+                if dupe == QtGui.QMessageBox.No:
+                    self.saveWorkspace()
+            # Save workspace
+            self.writeWorkspace(str(name), files)
+            self.addMenuActions()
+    
     def selectAll(self):
         editor = self.tab_bar.currentWidget()
         if editor:
@@ -438,6 +534,13 @@ class IDLE_R(QtGui.QMainWindow):
                     if not count >= 10:
                         f.write(rfile + '\n')
                         count += 1
+        
+    def writeWorkspace(self, name, files):
+        home = os.environ["HOME"]
+        with open(home + '/.idle-r/workspaces/' + name, 'w') as workspace:
+            for f in files:
+                workspace.write(f + '\n')
+            workspace.write(str(self.tab_bar.currentIndex()))
 
 if __name__ == '__main__':
     # Make the default settings
