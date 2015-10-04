@@ -123,6 +123,7 @@ class PygmentsHighlighter(QtGui.QSyntaxHighlighter):
         self._formatter = HtmlFormatter(nowrap=True)
         self._lexer = lexer if lexer else PythonLexer()
         self.set_style(PythonStyle)
+        self.setDocument(parent.document())
 
     def highlightBlock(self, string):
         """ Highlight a block of text.

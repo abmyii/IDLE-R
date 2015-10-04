@@ -71,7 +71,7 @@ class Editor(QtGui.QPlainTextEdit):
         self.updateStatusBar()
         
         # Syntax highlighting
-        PygmentsHighlighter(self.document())
+        PygmentsHighlighter(self)
         
         # Disable line wrapping and fix other settings
         self.enableLineNumbers = True
@@ -189,12 +189,21 @@ class Editor(QtGui.QPlainTextEdit):
         """Handle keypress events"""
         pos = self.textCursor().position()
         
+        # Handle backspaces
+        if QKeyEvent.text() == '\b':
+            posInBlock = self.textCursor().positionInBlock()
+            txt = self.document().findBlock(pos).text()[posInBlock-4:posInBlock]
+            if txt == '    ':
+                for i in range(4):
+                    self.textCursor().deletePreviousChar()
+                return
+        
         # Insert spaces instead of tabs
         if QKeyEvent.text() == '\t':
             self.insertPlainText('    ')
             return
             
-        if QKeyEvent.text() == '\r':
+        elif QKeyEvent.text() == '\r':
             space = ''
             if pos >= 1:
                 char = self.document().characterAt(pos - 1)
@@ -220,14 +229,8 @@ class Editor(QtGui.QPlainTextEdit):
             scrollBar.setValue(scrollBar.value() + scrollBar.singleStep())
             return
         
-        if QKeyEvent.text() == '\b':
-            posInBlock = self.textCursor().positionInBlock()
-            txt = self.document().findBlock(pos).text()[posInBlock-4:posInBlock]
-            if txt == '    ':
-                for i in range(4):
-                    self.textCursor().deletePreviousChar()
-                return
-        super(Editor, self).keyPressEvent(QKeyEvent)
+        else:
+            super(Editor, self).keyPressEvent(QKeyEvent)
     
     def goto_line(self):
         line, ok = QtGui.QInputDialog.getInt(self, "Goto", "Go to Line number:")
