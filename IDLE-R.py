@@ -182,6 +182,10 @@ class IDLE_R(QtGui.QMainWindow):
         editMenu.addAction(action)
         action = self.newAction("Find Again", self.findAgain, "Ctrl+G")
         editMenu.addAction(action)
+        action = self.newAction("Replace...", self.replace, "Ctrl+H")
+        editMenu.addAction(action)
+        action = self.newAction("Go to Line", self.goto_line, "Alt+G")
+        editMenu.addAction(action)
     
     def closeEvent(self, QCloseEvent):
         edited = False
@@ -263,6 +267,11 @@ class IDLE_R(QtGui.QMainWindow):
             workspaces.append(workspace)
         return workspaces
     
+    def goto_line(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.goto_line()
+    
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
         Action = QtGui.QAction(name, self)
@@ -302,7 +311,8 @@ class IDLE_R(QtGui.QMainWindow):
         tab = self.tab_bar.addTab(editor, name)
         self.tab_bar.setCurrentIndex(tab)
         
-        # Set focus to editor
+        # Set focus to the editor
+        #editor._editor.setFocus()
         editor.setFocus()
 
     def newShortcut(self, action, shortcut):
@@ -377,6 +387,11 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.redo()
+    
+    def replace(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.replace()
     
     def saveAs(self):
         """Save current file"""

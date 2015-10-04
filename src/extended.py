@@ -22,6 +22,7 @@
 #  
 # 
 from PyQt4 import Qt, QtCore, QtGui
+import threading
 
 class QAction(QtGui.QAction):
     """Extend to be able to hold data in the var stored'"""
@@ -49,6 +50,8 @@ class FindDialog(QtGui.QDialog):
 
         label = QtGui.QLabel("Find what:")
         self.lineEdit = QtGui.QLineEdit()
+        if states['find_text']:
+            self.lineEdit.setText(states['find_text'])
         label.setBuddy(self.lineEdit)
 
         self.caseSensitiveCheckBox = QtGui.QCheckBox("Match case")
@@ -107,10 +110,96 @@ class FindDialog(QtGui.QDialog):
     
     def exec_(self):
         super(FindDialog, self).exec_()
-        checkBoxesStates = {
+        states = {
             'caseSensitive': self.caseSensitiveCheckBox.checkState(),
             'fromStart': self.fromStartCheckBox.checkState(),
             'wholeWord': self.wholeWordsCheckBox.checkState(),
             'backward': self.backwardCheckBox.checkState(),
+            'find_text': self.lineEdit.text()
         }
-        return self.lineEdit.text(), checkBoxesStates, self._succesful
+        return self.lineEdit.text(), states, self._succesful
+
+class ReplaceDialog(QtGui.QDialog):
+    
+    def __init__(self, states, parent=None):
+        super(ReplaceDialog, self).__init__(parent)
+        self._succesful = True
+        self.buttonPressed = ''
+
+        label = QtGui.QLabel("Find:")
+        self.find = QtGui.QLineEdit()
+        if states['replace_text']:
+            self.find.setText(states['replace_text'])
+        label.setBuddy(self.find)
+        
+        label_rep = QtGui.QLabel("Replace With:")
+        self.replace = QtGui.QLineEdit()
+        if states['replace_with']:
+            self.replace.setText(states['replace_with'])
+        label.setBuddy(self.replace)
+
+        self.caseSensitiveCheckBox = QtGui.QCheckBox("Match case")
+        if states['caseSensitive']:
+            self.caseSensitiveCheckBox.setCheckState(2)
+
+        replaceButton = QtGui.QPushButton("Replace")
+        replaceButton.setDefault(True)
+        replaceButton.clicked.connect(self.close)
+        replaceAllButton = QtGui.QPushButton("Replace All")
+        replaceAllButton.clicked.connect(self.close)
+        closeButton = QtGui.QPushButton("Close")
+        closeButton.clicked.connect(self.close_)
+
+        buttonBox = QtGui.QDialogButtonBox(QtCore.Qt.Vertical)
+        buttonBox.addButton(replaceButton, QtGui.QDialogButtonBox.ActionRole)
+        buttonBox.addButton(replaceAllButton, QtGui.QDialogButtonBox.ActionRole)
+        buttonBox.addButton(closeButton, QtGui.QDialogButtonBox.ActionRole)
+        buttonBox.clicked.connect(self.setPressed)
+
+        extension = QtGui.QWidget()
+
+        self.wholeWordsCheckBox = QtGui.QCheckBox("Whole words")
+        if states['wholeWord']:
+            self.wholeWordsCheckBox.setCheckState(2)
+        self.backwardCheckBox = QtGui.QCheckBox("Search backward")
+        if states['backward']:
+            self.backwardCheckBox.setCheckState(2)
+
+        topLeftLayout = QtGui.QHBoxLayout()
+        topLeftLayout.addWidget(label)
+        topLeftLayout.addWidget(self.find)
+        topLeftLayout.addWidget(label_rep)
+        topLeftLayout.addWidget(self.replace)
+
+        leftLayout = QtGui.QVBoxLayout()
+        leftLayout.addLayout(topLeftLayout)
+        leftLayout.addWidget(self.caseSensitiveCheckBox)
+        leftLayout.addWidget(self.wholeWordsCheckBox)
+        leftLayout.addWidget(self.backwardCheckBox)
+        leftLayout.addStretch(1)
+
+        mainLayout = QtGui.QGridLayout()
+        mainLayout.setSizeConstraint(QtGui.QLayout.SetFixedSize)
+        mainLayout.addLayout(leftLayout, 0, 0)
+        mainLayout.addWidget(buttonBox, 0, 1)
+        self.setLayout(mainLayout)
+        self.setWindowTitle("Search Dialog")
+    
+    def close_(self):
+        super(ReplaceDialog, self).close()
+        self._succesful = False
+    
+    def exec_(self):
+        super(ReplaceDialog, self).exec_()
+        states = {
+            'caseSensitive': self.caseSensitiveCheckBox.checkState(),
+            'wholeWord': self.wholeWordsCheckBox.checkState(),
+            'backward': self.backwardCheckBox.checkState(),
+            'replace_text': self.find.text(),
+            'replace_with': self.replace.text(),
+            'replaceAll': False if self.buttonPressed == "Replace" else True,
+        }
+        return self.find.text(), self.replace.text(), states, self._succesful
+    
+    def setPressed(self, *args):
+        if args[0]: self.buttonPressed = args[0].text()
