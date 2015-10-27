@@ -21,9 +21,11 @@
 #  MA 02110-1301, USA.
 #  
 #  
+import PyQt4
 from PyQt4 import Qt, QtCore, QtGui
 from highlighter import PygmentsHighlighter
 from extended import FindDialog, ReplaceDialog
+import random
 
 class LineArea(QtGui.QWidget):
     
@@ -53,6 +55,11 @@ class Editor(QtGui.QPlainTextEdit):
     replace_caseSensitive = 0
     replace_wholeWord = 0
     replace_backward = 0
+    opening_brackets = []
+    closings_brackets = []
+    setNextUpdate = 0
+    selections = []
+    selectedBraces = 0
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
@@ -86,6 +93,8 @@ class Editor(QtGui.QPlainTextEdit):
                     self.updateLineAreaWidth)
         self.connect(self, QtCore.SIGNAL('updateRequest(QRect, int)'), \
                     self.updateLineArea)
+        self.connect(self, QtCore.SIGNAL('cursorPositionChanged()'), \
+                    self.resetSelections)
         
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
@@ -188,9 +197,15 @@ class Editor(QtGui.QPlainTextEdit):
     def keyPressEvent(self, QKeyEvent):
         """Handle keypress events"""
         pos = self.textCursor().position()
+        text = QKeyEvent.text()
+        
+        if self.selectedBraces:
+            cursor = self.textCursor()
+            cursor.clearSelection()
+            self.setTextCursor(cursor)
         
         # Handle backspaces
-        if QKeyEvent.text() == '\b':
+        if text == '\b':
             posInBlock = self.textCursor().positionInBlock()
             txt = self.document().findBlock(pos).text()[posInBlock-4:posInBlock]
             if txt == '    ':
@@ -199,11 +214,11 @@ class Editor(QtGui.QPlainTextEdit):
                 return
         
         # Insert spaces instead of tabs
-        if QKeyEvent.text() == '\t':
+        if text == '\t':
             self.insertPlainText('    ')
             return
             
-        elif QKeyEvent.text() == '\r':
+        elif text == '\r':
             space = ''
             if pos >= 1:
                 char = self.document().characterAt(pos - 1)
@@ -229,8 +244,46 @@ class Editor(QtGui.QPlainTextEdit):
             scrollBar.setValue(scrollBar.value() + scrollBar.singleStep())
             return
         
+        # Show brace formatting
+        elif str(text) and str(text) in '([{}])':
+            super(Editor, self).keyPressEvent(QKeyEvent)
+            if str(text) in '([{': # Check for closing (color red if no match)
+                self.match_braces(text, pos)
+            if str(text) in ')]}': # Check for opening (color red if no match)
+                self.match_braces(text, pos, True)
+        
         else:
             super(Editor, self).keyPressEvent(QKeyEvent)
+            
+        if not self.textCursor().hasSelection() and self.selectedBraces:
+            self.selectedBraces = 0
+    
+    def match_braces(self, brace, pos, bw=False):
+        brace_pos = None
+        text = ''
+        if bw:
+            for text in enumerate(self.toPlainText()[:pos][::-1]):
+                if str(text[1]) and str(text[1]) in '([{':
+                    brace_pos = pos - text[0]
+                    break
+        else:
+            for text in enumerate(self.toPlainText()[pos:]):
+                if str(text[1]) and str(text[1]) in '}])':
+                    brace_pos = pos + text[0]
+                    break
+        if brace_pos:
+            self.moveCursor(QtGui.QTextCursor.Start)
+            if bw:
+                right = brace_pos - 1
+                anchor_right = (pos - brace_pos)
+            else:
+                right = pos
+                anchor_right = (brace_pos - pos)
+            for _ in range(right):
+                self.moveCursor(QtGui.QTextCursor.Right)
+            for _ in range(anchor_right + 2):
+                self.moveCursor(QtGui.QTextCursor.Right, 1)
+            self.selectedBraces = 1
     
     def goto_line(self):
         line, ok = QtGui.QInputDialog.getInt(self, "Goto", "Go to Line number:")
@@ -240,10 +293,10 @@ class Editor(QtGui.QPlainTextEdit):
                 self.moveCursor(QtGui.QTextCursor.Down)
     
     def highlight_current_line(self):
-        self.extraSelections = []
+        #selections = self.extraSelections()
+        selections = []
         
-        block = self.textCursor()
-        selection = QtGui.QTextEdit().ExtraSelection()
+        selection = QtGui.QTextEdit.ExtraSelection()
         lineColor = QtGui.QColor("#858585")
         lineColor.setAlpha(20)
 
@@ -251,8 +304,8 @@ class Editor(QtGui.QPlainTextEdit):
         selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
         selection.cursor = self.textCursor()
         selection.cursor.clearSelection()
-        self.extraSelections.append(selection)
-        self.setExtraSelections(self.extraSelections)
+        selections.append(selection)
+        self.setExtraSelections(selections)
     
     def lineAreaPaintEvent(self, event):
         # Draw gutter area
@@ -340,6 +393,9 @@ class Editor(QtGui.QPlainTextEdit):
     
     def updateLineAreaWidth(self, blocks):
         self.setViewportMargins(self.lineAreaWidth(), 0, 0, 0)
+    
+    def resetSelections(self):
+        pass
     
     def updateStatusBar(self):
         message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)

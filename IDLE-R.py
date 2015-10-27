@@ -170,6 +170,8 @@ class IDLE_R(QtGui.QMainWindow):
         editMenu.addAction(action)
         action = self.newAction("Copy", self.copy, "Ctrl+C")
         editMenu.addAction(action)
+        action = self.newAction("Paste", self.paste, "Ctrl+Shift+V")
+        self.addAction(action) # (< and ^) For unix user copying terminal
         action = self.newAction("Paste", self.paste, "Ctrl+V")
         editMenu.addAction(action)
         action = self.newAction("Select All", self.selectAll, "Ctrl+A")
@@ -298,7 +300,7 @@ class IDLE_R(QtGui.QMainWindow):
         if text:
             editor.isUntitled = False
             editor.fname = fname
-            editor.setText(text)
+            editor.setPlainText(text)
             
             # Set cursor pos
             for i in range(cpos):
@@ -312,7 +314,6 @@ class IDLE_R(QtGui.QMainWindow):
         self.tab_bar.setCurrentIndex(tab)
         
         # Set focus to the editor
-        #editor._editor.setFocus()
         editor.setFocus()
 
     def newShortcut(self, action, shortcut):
