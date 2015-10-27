@@ -261,16 +261,24 @@ class Editor(QtGui.QPlainTextEdit):
     def match_braces(self, brace, pos, bw=False):
         brace_pos = None
         text = ''
+        no_close_brace = False # To check if a brace is already taken
         if bw:
-            for text in enumerate(self.toPlainText()[:pos][::-1]):
-                if str(text[1]) and str(text[1]) in '([{':
-                    brace_pos = pos - text[0]
-                    break
+            searchText = self.toPlainText()[:pos][::-1]
+            checkBraces = '([{'
         else:
-            for text in enumerate(self.toPlainText()[pos:]):
-                if str(text[1]) and str(text[1]) in '}])':
-                    brace_pos = pos + text[0]
+            searchText = self.toPlainText()[pos + 1:]
+            checkBraces = '}])'
+            
+        for text in enumerate(searchText):
+            if str(text[1]) and str(text[1]) == brace:
+                no_close_brace = True
+            if str(text[1]) and str(text[1]) in checkBraces:
+                if no_close_brace:
+                    no_close_brace = False
+                else:
+                    brace_pos = pos - text[0] if bw else pos + text[0]
                     break
+                
         if brace_pos:
             self.moveCursor(QtGui.QTextCursor.Start)
             if bw:
