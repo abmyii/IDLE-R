@@ -43,6 +43,7 @@ class Editor(QtGui.QPlainTextEdit):
     isUntitled = False
     fname = ''
     indentation = 0
+    selectedBraces = 0
     # Vars for searching for text
     find_text = ''
     find_caseSensitive = 0
@@ -57,9 +58,6 @@ class Editor(QtGui.QPlainTextEdit):
     replace_backward = 0
     opening_brackets = []
     closings_brackets = []
-    setNextUpdate = 0
-    selections = []
-    selectedBraces = 0
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
