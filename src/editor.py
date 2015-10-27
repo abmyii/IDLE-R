@@ -93,8 +93,6 @@ class Editor(QtGui.QPlainTextEdit):
                     self.updateLineAreaWidth)
         self.connect(self, QtCore.SIGNAL('updateRequest(QRect, int)'), \
                     self.updateLineArea)
-        self.connect(self, QtCore.SIGNAL('cursorPositionChanged()'), \
-                    self.resetSelections)
         
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
@@ -301,7 +299,6 @@ class Editor(QtGui.QPlainTextEdit):
                 self.moveCursor(QtGui.QTextCursor.Down)
     
     def highlight_current_line(self):
-        #selections = self.extraSelections()
         selections = []
         
         selection = QtGui.QTextEdit.ExtraSelection()
@@ -401,9 +398,6 @@ class Editor(QtGui.QPlainTextEdit):
     
     def updateLineAreaWidth(self, blocks):
         self.setViewportMargins(self.lineAreaWidth(), 0, 0, 0)
-    
-    def resetSelections(self):
-        pass
     
     def updateStatusBar(self):
         message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)
