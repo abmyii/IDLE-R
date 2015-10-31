@@ -1,24 +1,48 @@
+CHANGE TO PySide (GET FIRST!)!
+
+show "(" and ")" in red/other color when selected (match_braces)
+
 Add all menuBar options
+
+Make sidebar more advanced (maybe show mode (insert/replace) and stuff)
 
 When import, add all namespaces of the module for auto-completion
 (If import in line, then eval loc and if worked, add namespaces)
 
-When there are braces, show doc str of the module and arg called with showToolTip
+code folding
 
-Bracket matching
+When there are braces, show doc str of the module and arg called with showToolTip
 
 Use (widget).addAction for auto-completion. For __init__ of the widget, set parent to QTextEdit
 
 Make my own console (pyshell) using QtGui.QDockWidget, and add it to main window 
 using self.addDockWidget. (? Use ipython console?)
 
-Make colorscheme customizable (and editor bg?) ?
+Make colorscheme customizable (and editor bg)
+
+Spell check?
+
+Split view!?
+
+pip/flask8/pylint/pip/(like spyder, where shows unused imports and stuff...)?
 
 # Key bindings
-F5 = Python2 Run
-F6 = Python3 Run
+F5 = Python2 Run (OR set as choose py2/py3)
+F6 = Python3 Run (OR set as choose py2/py3)
 
 Terminal in the window
 Project browsing
 
+Debugger
+
 Toolbar with all shortcuts needed
+
+When done this ide, save as base-ide for other ides (build on this one)
+
+(When making proper django/python version)
+AST (+ Assembly) viewer?
+Git intergration?
+Vim intergration? (Update sidebar to add this)
+
+RENAME. Ideas: DreamDjango(Dream/DreamCode studios?!) DevPy DreamPython
+(Make full version and sell?! & free (not full) version? (community?))

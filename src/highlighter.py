@@ -21,11 +21,10 @@
 #  MA 02110-1301, USA.
 #  
 # 
-from PyQt4 import Qt, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 from styles import PythonStyle
 
 # All of this code has been taken from IPython pygments_highlighter.py
-from PyQt4 import QtGui
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexer import RegexLexer, _TokenType, Text, Error
 from pygments.lexers import PythonLexer

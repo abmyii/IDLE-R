@@ -21,7 +21,7 @@
 #  MA 02110-1301, USA.
 #  
 #  
-from PyQt4 import Qt, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 
 class TabWidget(QtGui.QTabWidget):
     

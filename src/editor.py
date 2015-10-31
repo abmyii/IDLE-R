@@ -21,8 +21,7 @@
 #  MA 02110-1301, USA.
 #  
 #  
-import PyQt4
-from PyQt4 import Qt, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 from highlighter import PygmentsHighlighter
 from extended import FindDialog, ReplaceDialog
 import random
@@ -58,6 +57,7 @@ class Editor(QtGui.QPlainTextEdit):
     replace_backward = 0
     opening_brackets = []
     closings_brackets = []
+    hadSelection = False
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
@@ -95,6 +95,8 @@ class Editor(QtGui.QPlainTextEdit):
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
                     self.setFindReplaceText)
+        self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
+                    self.show_parens)
         
         # Font
         font = QtGui.QFont()
@@ -110,10 +112,13 @@ class Editor(QtGui.QPlainTextEdit):
         # Initialize Line number widget
         self.updateLineAreaWidth(0)
     
-    def setFindReplaceText(self, yes):
-        if yes:
-            data = self.textCursor().selectedText()
-            self.find_text = self.replace_text = data
+    def autocomplete(self):
+        # NOTES:
+        # If Ctrl+Space is pressed, open autocomplete
+        # If Tab pressed and no word under cursor, pass (fix on keyPressEvent)
+        # If Tab pressed and word under cursor, open autocomplete (filter by word under cursor?)
+        # If double Tab (quick taps?) and word under cursor, just tab. (TWEAK!)
+        pass
     
     def find(self, text='', pos=None, comp=False, states={}):
         # Check and get text if none was given
@@ -297,6 +302,7 @@ class Editor(QtGui.QPlainTextEdit):
                 self.moveCursor(QtGui.QTextCursor.Down)
     
     def highlight_current_line(self):
+        if self.hadSelection: return # Pass if just showing parens
         selections = []
         
         selection = QtGui.QTextEdit.ExtraSelection()
@@ -384,7 +390,23 @@ class Editor(QtGui.QPlainTextEdit):
         self.lineArea.setGeometry(QtCore.QRect(rect.left(), rect.top(), \
                                         self.lineAreaWidth(), rect.height()))
     
+    def setFindReplaceText(self, yes):
+        if yes:
+            data = self.textCursor().selectedText()
+            self.find_text = self.replace_text = data
+    
+    def show_parens(self, yes):
+        text = unicode(self.textCursor().selectedText())
+        if yes and not self.hadSelection and not text == u'\u2029':
+            self.hadSelection = True
+            if len(text) == 1 and text in '([{}])':
+                pos = self.textCursor().selectionStart()
+                self.match_braces(text, pos, True if text in '}])' else False)
+        elif yes:
+            self.hadSelection = False
+    
     def updateLineArea(self, rect, dy):
+        if self.hadSelection: return # Pass if just showing parens
         # Respond to a scroll event
         if dy:
             self.lineArea.scroll(0, dy)
@@ -398,6 +420,7 @@ class Editor(QtGui.QPlainTextEdit):
         self.setViewportMargins(self.lineAreaWidth(), 0, 0, 0)
     
     def updateStatusBar(self):
+        if self.hadSelection: return # Pass if just showing parens
         message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()

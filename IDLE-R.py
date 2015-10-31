@@ -22,7 +22,7 @@
 #
 #
 import sys, os
-from PyQt4 import Qt, QtCore, QtGui
+from PyQt4 import QtCore, QtGui
 from datetime import date
 
 # Import all parts of the IDE
@@ -188,6 +188,8 @@ class IDLE_R(QtGui.QMainWindow):
         editMenu.addAction(action)
         action = self.newAction("Go to Line", self.goto_line, "Alt+G")
         editMenu.addAction(action)
+        action = self.newAction("Show Completions", self.comps, "Ctrl+Space")
+        editMenu.addAction(action)
     
     def closeEvent(self, QCloseEvent):
         edited = False
@@ -225,6 +227,11 @@ class IDLE_R(QtGui.QMainWindow):
     
     def closeTab(self, index):
         self.tab_bar.closeTab(index, self.saveFile, self.setMsgBoxPos, self)
+    
+    def comps(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.autocomplete()
 
     def copy(self):
         editor = self.tab_bar.currentWidget()
