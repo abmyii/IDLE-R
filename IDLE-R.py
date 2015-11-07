@@ -115,9 +115,8 @@ class IDLE_R(QtGui.QMainWindow):
         # Add recent files
         for recentFile in self.readRecentFile():
             if recentFile:
-                rfile = QAction(recentFile, self, self.openRecentFile)
-                rfile.triggered.connect(rfile.doAction)
-                menu.addAction(rfile)
+                RecentFile = QAction(recentFile, self, self.openRecentFile)
+                menu.addAction(RecentFile)
         
         # Separator
         fileMenu.addSeparator()
@@ -131,18 +130,16 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Add workspaces
         for workspace in self.getWorkspaces():
-            ws = QAction(workspace, self, self.openWorkspace)
-            ws.triggered.connect(ws.doAction)
-            menu.addAction(ws)
+            Workspace = QAction(workspace, self, self.openWorkspace)
+            menu.addAction(Workspace)
         
         # Delete Workspace menu
         menu = fileMenu.addMenu("Delete Workspace")
         
         # Add workspaces
         for workspace in self.getWorkspaces():
-            ws = QAction(workspace, self, self.deleteWorkspace)
-            ws.triggered.connect(ws.doAction)
-            menu.addAction(ws)
+            Workspace = QAction(workspace, self, self.deleteWorkspace)
+            menu.addAction(Workspace)
         
         # Separator
         fileMenu.addSeparator()

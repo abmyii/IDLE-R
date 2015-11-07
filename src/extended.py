@@ -29,10 +29,9 @@ class QAction(QtGui.QAction):
     
     def __init__(self, *args):
         super(QAction, self).__init__(*args[:-1])
-        self.action = args[-1]
-
-    def doAction(self):
-        self.action(self.text())
+        def doAction():
+            args[-1](self.text())
+        self.triggered.connect(doAction)
 
 class StatusBar(QtGui.QStatusBar):
     widget = None
