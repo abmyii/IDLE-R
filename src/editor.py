@@ -21,7 +21,7 @@
 #  MA 02110-1301, USA.
 #  
 #  
-from PyQt4 import QtCore, QtGui
+from PySide import QtCore, QtGui
 from highlighter import PygmentsHighlighter
 from extended import FindDialog, ReplaceDialog
 import random
@@ -80,7 +80,7 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Disable line wrapping and fix other settings
         self.enableLineNumbers = True
-        self.setLineWrapMode(0)
+        self.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
         self.setFrameShape(QtGui.QFrame.NoFrame)
         
         # Create line number widget
@@ -118,6 +118,7 @@ class Editor(QtGui.QPlainTextEdit):
         # If Tab pressed and no word under cursor, pass (fix on keyPressEvent)
         # If Tab pressed and word under cursor, open autocomplete (filter by word under cursor?)
         # If double Tab (quick taps?) and word under cursor, just tab. (TWEAK!)
+        # If text under cursor >= 3 letters show
         pass
     
     def find(self, text='', pos=None, comp=False, states={}):
@@ -223,7 +224,7 @@ class Editor(QtGui.QPlainTextEdit):
             space = ''
             if pos >= 1:
                 char = self.document().characterAt(pos - 1)
-                if char == QtCore.QChar(0x3a):
+                if char == ':':
                     space += '    '
             
             # Add last line's tabs to this line (keep indentaition)
@@ -281,7 +282,6 @@ class Editor(QtGui.QPlainTextEdit):
                     break
                 
         if brace_pos:
-            self.moveCursor(QtGui.QTextCursor.Start)
             if bw:
                 right = brace_pos - 1
                 anchor_right = (pos - brace_pos)
@@ -335,7 +335,7 @@ class Editor(QtGui.QPlainTextEdit):
         block = firstBlock
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
-                num = QtCore.QString(str(blockNumber + 1))
+                num = str(blockNumber + 1)
                 painter.setPen(QtCore.Qt.black)
                 painter.drawText(-1, top, self.lineArea.width(), \
                                  self.fontMetrics().height(), \
@@ -351,7 +351,7 @@ class Editor(QtGui.QPlainTextEdit):
         # Return a line number width of 4 chars
         if self.enableLineNumbers:
             fm = self.fontMetrics()
-            return 4 + fm.width(QtCore.QChar('9')) * 4
+            return 4 + fm.width('9') * 4
         else:
             return 0
     

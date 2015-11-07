@@ -21,19 +21,18 @@
 #  MA 02110-1301, USA.
 #  
 # 
-from PyQt4 import QtCore, QtGui
+import PySide
+from PySide import QtCore, QtGui
 import threading
 
 class QAction(QtGui.QAction):
-    """Extend to be able to hold data in the var stored'"""
-    stored = None
-
-    def connect(self, action):
-        self.action = action
-        self.triggered.connect(self.doAction)
+    
+    def __init__(self, *args):
+        super(QAction, self).__init__(*args[:-1])
+        self.action = args[-1]
 
     def doAction(self):
-        self.action(self)
+        self.action(self.text())
 
 class StatusBar(QtGui.QStatusBar):
     widget = None

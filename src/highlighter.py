@@ -21,7 +21,7 @@
 #  MA 02110-1301, USA.
 #  
 # 
-from PyQt4 import QtCore, QtGui
+from PySide import QtCore, QtGui
 from styles import PythonStyle
 
 # All of this code has been taken from IPython pygments_highlighter.py

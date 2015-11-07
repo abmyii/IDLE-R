@@ -22,7 +22,7 @@
 #
 #
 import sys, os
-from PyQt4 import QtCore, QtGui
+from PySide import QtCore, QtGui
 from datetime import date
 
 # Import all parts of the IDE
@@ -115,9 +115,8 @@ class IDLE_R(QtGui.QMainWindow):
         # Add recent files
         for recentFile in self.readRecentFile():
             if recentFile:
-                rfile = QAction(recentFile, self)
-                rfile.stored = recentFile
-                rfile.connect(self.openRecentFile)
+                rfile = QAction(recentFile, self, self.openRecentFile)
+                rfile.triggered.connect(rfile.doAction)
                 menu.addAction(rfile)
         
         # Separator
@@ -132,9 +131,8 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Add workspaces
         for workspace in self.getWorkspaces():
-            ws = QAction(workspace, self)
-            ws.stored = workspace
-            ws.connect(self.openWorkspace)
+            ws = QAction(workspace, self, self.openWorkspace)
+            ws.triggered.connect(ws.doAction)
             menu.addAction(ws)
         
         # Delete Workspace menu
@@ -142,9 +140,8 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Add workspaces
         for workspace in self.getWorkspaces():
-            ws = QAction(workspace, self)
-            ws.stored = workspace
-            ws.connect(self.deleteWorkspace)
+            ws = QAction(workspace, self, self.deleteWorkspace)
+            ws.triggered.connect(ws.doAction)
             menu.addAction(ws)
         
         # Separator
@@ -245,7 +242,7 @@ class IDLE_R(QtGui.QMainWindow):
     
     def deleteWorkspace(self, action):
         home = os.environ["HOME"]
-        name = action.stored
+        name = action
         message = "Are you sure you want to delete the workspace " + name + "?"
         delete = QtGui.QMessageBox.question(
                 self, 'Delete Workspace', message,
@@ -357,13 +354,13 @@ class IDLE_R(QtGui.QMainWindow):
                 return
         self.newFile(name, False, text, filename)
     
-    def openRecentFile(self, action):
+    def openRecentFile(self, rfile):
         """Open a recent file"""
-        self.openFile(action.stored)
+        self.openFile(rfile)
     
     def openWorkspace(self, action):
         home = os.environ["HOME"]
-        with open(home + '/.idle-r/workspaces/' + action.stored) as workspace:
+        with open(home + '/.idle-r/workspaces/' + action) as workspace:
             data = workspace.read().split('\n')
             files = data[:-2]
             tab_index = int(data[-2])
@@ -417,7 +414,7 @@ class IDLE_R(QtGui.QMainWindow):
             last = ''
         
         if last != '\n' and last != '':
-            editor.append('')
+            editor.appendPlainText('')
 
         # Save file
         if editor.isUntitled or saveAs:
@@ -426,7 +423,7 @@ class IDLE_R(QtGui.QMainWindow):
             filename = fsave(
                 self, 'Save As', os.curdir,
                 "Python files (*.py *.pyw *.py3);; All files (*)"
-            )
+            )[0]
             if not filename:  # Filename was blank ('')
                 return False
             
