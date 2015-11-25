@@ -304,8 +304,9 @@ class IDLE_R(QtGui.QMainWindow):
             editor.setPlainText(text)
             
             # Set cursor pos
+            cursor = QtGui.QTextCursor
             for i in range(cpos):
-                editor.moveCursor(19, 0)
+                editor.moveCursor(cursor.Right, cursor.MoveAnchor)
         
         # Add the tab
         if ow:
@@ -331,7 +332,7 @@ class IDLE_R(QtGui.QMainWindow):
             filename = QtGui.QFileDialog.getOpenFileName(
                 self, 'Open File', os.curdir,
                 "Python files (*.py *.pyw *.py3);; All files (*)"
-            )
+            )[0]
             if not filename:  # Filename was blank ('')
                 return
             
@@ -404,14 +405,16 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         pos = editor.textCursor().anchor()
         
+        # Get text
+        text = editor.toPlainText()
+        
         # Append newline to end of file
         try:
-            last = editor.toPlainText()[-1]
+            last = text[-1]
         except IndexError:
             last = ''
         
-        if last != '\n' and last != '':
-            editor.appendPlainText('')
+        if last and last != '\n': text += '\n'
 
         # Save file
         if editor.isUntitled or saveAs:
@@ -435,7 +438,7 @@ class IDLE_R(QtGui.QMainWindow):
             # Read file and display
             text = open(filename, 'r').read()
             name = os.path.split(str(filename))[-1]
-            self.newFile(name, True, text, filename, pos)
+            self.newFile(name, True, editor.toPlainText(), filename, pos)
             
         else:
             # Write to file

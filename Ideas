@@ -1,5 +1,11 @@
-Convert to pyside
+Make where if you have a \ at the end of a line, then on the next line
+Indent to the first args using spaces. Example:
+main(hello, bye, arg1, arg2\
+     arg3, arg4)
+
 Check PyCharm for other ideas.
+Check Wing for other ideas.
+Check Code::Blocks for other ideas.
 
 show "(" and ")" in red/other color when selected (match_braces)
 
@@ -39,6 +45,9 @@ Debugger
 Settings
 
 Automatic save workspace? (In settings?)
+
+Near line numbers (just after) make bar that shows lines that are edited from
+last save of file (check codeblocks)
 
 Plugins?! (make suitable for plugins (and make some?))
 

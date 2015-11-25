@@ -69,7 +69,7 @@ class Editor(QtGui.QPlainTextEdit):
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.highlight_current_line)
         self.highlight_current_line()
-                     
+        
         # Update status bar
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.updateStatusBar)
@@ -216,7 +216,7 @@ class Editor(QtGui.QPlainTextEdit):
                 return
         
         # Insert spaces instead of tabs
-        if text == '\t':
+        elif text == '\t':
             self.insertPlainText('    ')
             return
             
@@ -224,15 +224,31 @@ class Editor(QtGui.QPlainTextEdit):
             space = ''
             if pos >= 1:
                 char = self.document().characterAt(pos - 1)
+                position = pos
+                while not char in [u'\u2029', ' '] and position > 0:
+                    char = self.document().characterAt(position)
+                    position -= 1
+                
                 if char == ':':
                     space += '    '
+                    
+                if char == '\\':
+                    chars = '([{ '
+                    char = ''
+                    position = pos
+                    while position > 0:
+                        char = self.document().characterAt(position)
+                        if char in chars:
+                            break
+                        position -= 1
+                print [char]
             
             # Add last line's tabs to this line (keep indentaition)
             for char in self.document().findBlock(pos).text():
                 if char != ' ':
                     break
                 space += ' '
-                    
+
             # Dedent if last word is pass or continue or break
             last = str(self.document().findBlock(pos).text()).strip()
             if last == 'break' or last == 'continue' or last == 'pass':
@@ -242,8 +258,7 @@ class Editor(QtGui.QPlainTextEdit):
             self.textCursor().beginEditBlock()
             self.insertPlainText('\n' + space)
             self.textCursor().endEditBlock()
-            scrollBar = self.verticalScrollBar()
-            scrollBar.setValue(scrollBar.value() + scrollBar.singleStep())
+            self.ensureCursorVisible()
             return
         
         # Show brace formatting
@@ -253,9 +268,9 @@ class Editor(QtGui.QPlainTextEdit):
                 self.match_braces(text, pos)
             if str(text) in ')]}': # Check for opening (color red if no match)
                 self.match_braces(text, pos, True)
-        
-        else:
-            super(Editor, self).keyPressEvent(QKeyEvent)
+            return
+            
+        super(Editor, self).keyPressEvent(QKeyEvent)
             
         if not self.textCursor().hasSelection() and self.selectedBraces:
             self.selectedBraces = 0
@@ -291,7 +306,8 @@ class Editor(QtGui.QPlainTextEdit):
             for _ in range(right):
                 self.moveCursor(QtGui.QTextCursor.Right)
             for _ in range(anchor_right + 2):
-                self.moveCursor(QtGui.QTextCursor.Right, 1)
+                textCursor = QtGui.QTextCursor
+                self.moveCursor(textCursor.Right, textCursor.MoveAnchor)
             self.selectedBraces = 1
     
     def goto_line(self):
@@ -319,10 +335,10 @@ class Editor(QtGui.QPlainTextEdit):
     def lineAreaPaintEvent(self, event):
         # Draw gutter area
         painter = QtGui.QPainter(self.lineArea)
-        painter.fillRect(event.rect(), QtGui.QColor('#949494'))
+        painter.fillRect(event.rect(), QtGui.QColor('#C4C4C4'))
 
         # Match editor font
-        painter.setFont(self.font())
+        painter.setFont(QtGui.QFont())
 
         # Calculate geometry
         firstBlock = self.firstVisibleBlock()
@@ -337,9 +353,9 @@ class Editor(QtGui.QPlainTextEdit):
             if block.isVisible() and bottom >= event.rect().top():
                 num = str(blockNumber + 1)
                 painter.setPen(QtCore.Qt.black)
-                painter.drawText(-1, top, self.lineArea.width(), \
+                painter.drawText(3, top, self.lineArea.width(), \
                                  self.fontMetrics().height(), \
-                                 QtCore.Qt.AlignHCenter, num)
+                                 QtCore.Qt.AlignLeft, num)
 
             # Increment
             block = block.next()
