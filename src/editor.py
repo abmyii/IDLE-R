@@ -65,6 +65,9 @@ class Editor(QtGui.QPlainTextEdit):
         # Status bar
         self.statusBar = statusBar
         
+        # Syntax highlighting
+        self.highlighter = PygmentsHighlighter(self)
+        
         # Highlighting current line
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.highlight_current_line)
@@ -74,9 +77,6 @@ class Editor(QtGui.QPlainTextEdit):
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.updateStatusBar)
         self.updateStatusBar()
-        
-        # Syntax highlighting
-        PygmentsHighlighter(self)
         
         # Disable line wrapping and fix other settings
         self.enableLineNumbers = True

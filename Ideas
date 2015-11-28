@@ -6,6 +6,9 @@ main(hello, bye, arg1, arg2\
 Check PyCharm for other ideas.
 Check Wing for other ideas.
 Check Code::Blocks for other ideas.
+Check Eric IDE for other ideas.
+
+Import templates (your own?)
 
 show "(" and ")" in red/other color when selected (match_braces)
 
@@ -53,13 +56,16 @@ Plugins?! (make suitable for plugins (and make some?))
 
 Splash screen?! (OR AFTER IDLE-R?)
 
-FINISH HERE FOR IDLE-R
+FINISH HERE FOR IDLE-R AND START PROPER Python IDE
+Names???: DreamDjango(Dream/DreamCode studios?!) DreamPython (Anyone can dream)
 
 Reset last workspace (or files) when reopened
 
 Smart code navigation (on the side, show funcs, classes etc...)
 
 Project browsing
+
+Make team dev (like chat and stuff)
 
 Make sidebar more advanced (maybe show mode (insert/replace) and stuff (for vim))
 
@@ -83,12 +89,11 @@ When done this ide, save as base-ide for other ides (build on this one)
 (When making proper django/python version)
 AST (+ Assembly) viewer?
 Pip intergration?
-Venv intergration?
+Venv/PyEnv intergration?
 Make where you choose your python interpreter (jython, ironpython...)
 browser? (web)
 
 Make where you can connect to python-doc (or for arg showing?)(FULL VERSION?)
 
-RENAME. Ideas: DreamDjango(Dream/DreamCode studios?!) DreamPython (Anyone/Everyone can dream)
 (FOR Django add js, html(5) and css(3) support, autoreload of browser?)
 (Make full version and sell?! & free (not full) version? (community?))

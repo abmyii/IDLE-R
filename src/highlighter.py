@@ -135,10 +135,9 @@ class PygmentsHighlighter(QtGui.QSyntaxHighlighter):
 
         # Lex the text using Pygments
         index = 0
-        for token, text in self._lexer.get_tokens(str(string)):
+        for token, text in self._lexer.get_tokens(string):
             length = len(text)
-            if text != 'self': # Dont highlight self
-                self.setFormat(index, length, self._get_format(token))
+            self.setFormat(index, length, self._get_format(token))
             index += length
 
         if hasattr(self._lexer, '_saved_state_stack'):
