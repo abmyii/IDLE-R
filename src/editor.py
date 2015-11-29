@@ -199,6 +199,7 @@ class Editor(QtGui.QPlainTextEdit):
         """Handle keypress events"""
         pos = self.textCursor().position()
         text = QKeyEvent.text()
+        last = self.document().findBlock(pos).text().strip()
         
         if self.selectedBraces:
             cursor = self.textCursor()
@@ -208,9 +209,14 @@ class Editor(QtGui.QPlainTextEdit):
         # Handle backspaces
         if text == '\b':
             posInBlock = self.textCursor().positionInBlock()
-            txt = self.document().findBlock(pos).text()[posInBlock-4:posInBlock]
-            if txt == '    ':
-                for i in range(4):
+            txt = self.document().findBlock(pos).text()
+            dedent = 0
+            if not txt.strip():
+                dedent = len(txt)
+            elif not txt[posInBlock-4:posInBlock].strip():
+                dedent = 4
+            if dedent:
+                for i in range(dedent):
                     self.textCursor().deletePreviousChar()
                 return
         
@@ -219,28 +225,22 @@ class Editor(QtGui.QPlainTextEdit):
             self.insertPlainText('    ')
             return
             
-        elif text == '\r':
+        elif text in ['\r', '\n']:
             space = ''
-            if pos >= 1:
-                char = self.document().characterAt(pos - 1)
-                position = pos
-                while not char in [u'\u2029', ' '] and position > 0:
-                    char = self.document().characterAt(position)
-                    position -= 1
+            hasBrace = False
+            
+            if '(' in last or '[' in last or '{' in last:
+                space += ' ' * 4
+                hasBrace = True
+            
+            if last:
+                char = last[-1]
                 
                 if char == ':':
                     space += '    '
                     
-                if char == '\\':
-                    chars = '([{ '
-                    char = ''
-                    position = pos
-                    while position > 0:
-                        char = self.document().characterAt(position)
-                        if char in chars:
-                            break
-                        position -= 1
-                print([char])
+                if not hasBrace and char == '\\':
+                    space += ' ' * (len(last) - 1)
             
             # Add last line's tabs to this line (keep indentaition)
             for char in self.document().findBlock(pos).text():
@@ -249,8 +249,7 @@ class Editor(QtGui.QPlainTextEdit):
                 space += ' '
 
             # Dedent if last word is pass or continue or break
-            last = str(self.document().findBlock(pos).text()).strip()
-            if last == 'break' or last == 'continue' or last == 'pass':
+            if last in ['break', 'continue', 'pass']:
                 space = space[:-4]
             
             # Insert text and space
@@ -261,11 +260,11 @@ class Editor(QtGui.QPlainTextEdit):
             return
         
         # Show brace formatting
-        elif str(text) and str(text) in '([{}])':
+        elif text and text in '([{}])':
             super(Editor, self).keyPressEvent(QKeyEvent)
-            if str(text) in '([{': # Check for closing (color red if no match)
+            if text in '([{': # Check for closing (color red if no match)
                 self.match_braces(text, pos)
-            if str(text) in ')]}': # Check for opening (color red if no match)
+            if text in ')]}': # Check for opening (color red if no match)
                 self.match_braces(text, pos, True)
             return
             
