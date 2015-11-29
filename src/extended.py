@@ -79,7 +79,6 @@ class FindDialog(QtGui.QDialog):
             self.backwardCheckBox.setCheckState(2)
 
         extensionLayout = QtGui.QVBoxLayout()
-        extensionLayout.setMargin(0)
         extensionLayout.addWidget(self.wholeWordsCheckBox)
         extensionLayout.addWidget(self.backwardCheckBox)
         extension.setLayout(extensionLayout)

@@ -22,8 +22,8 @@
 #  
 #  
 from PySide import QtCore, QtGui
-from highlighter import PygmentsHighlighter
-from extended import FindDialog, ReplaceDialog
+from src.highlighter import PygmentsHighlighter
+from src.extended import FindDialog, ReplaceDialog
 import random
 
 class LineArea(QtGui.QWidget):
@@ -146,18 +146,17 @@ class Editor(QtGui.QPlainTextEdit):
             }
         
         # If got text, then start finding
-        if str(text):
+        if text:
             # Check there are occurences of the search text in the document.
             do = 0
-            txt = str(text)
-            alltxt = str(self.toPlainText())
+            txt = text
+            all_text = self.toPlainText()
             if not states['caseSensitive']:
-                txt = txt.lower()
-                alltxt = alltxt.lower()
-            if txt in alltxt: do = 1
+                all_text = all_text.lower()
+            if text in all_text: do = 1
             if not do and states['wholeWord']:
-                if ' ' + txt + ' ' in alltxt: do = 1
-            if not do and comp and states['replaceAll']: states['backward'] = True
+                if ' ' + txt + ' ' in all_text: do = 1
+            if not do and comp and states['replaceAll']: states['backward'] = 1
             if do:
                 self.find_text = text
                 
@@ -241,7 +240,7 @@ class Editor(QtGui.QPlainTextEdit):
                         if char in chars:
                             break
                         position -= 1
-                print [char]
+                print([char])
             
             # Add last line's tabs to this line (keep indentaition)
             for char in self.document().findBlock(pos).text():
@@ -287,9 +286,9 @@ class Editor(QtGui.QPlainTextEdit):
             checkBraces = '}])'
             
         for text in enumerate(searchText):
-            if str(text[1]) and str(text[1]) == brace:
+            if text[1] and text[1] == brace:
                 no_close_brace = True
-            if str(text[1]) and str(text[1]) in checkBraces:
+            if text[1] and text[1] in checkBraces:
                 if no_close_brace:
                     no_close_brace = False
                 else:
@@ -388,15 +387,16 @@ class Editor(QtGui.QPlainTextEdit):
         self.replace_text = states['replace_text']
         self.replace_with = states['replace_with']
         if successful:
-            replaced = False
+            do_replace = False
             while True:
                 found = self.find(find, None, True, states)
                 if found is True:
-                    replaced = True
+                    do_replace = True
                     self.insertPlainText(replace)
                 if not found or not states['replaceAll']:
                     break
-            if not states['replaceAll'] and replaced and str(find) in str(self.toPlainText()):
+            text = self.toPlainText()
+            if not states['replaceAll'] and do_replace and find in text:
                 self.replace()
     
     def resizeEvent(self, event):
@@ -412,7 +412,7 @@ class Editor(QtGui.QPlainTextEdit):
             self.find_text = self.replace_text = data
     
     def show_parens(self, yes):
-        text = unicode(self.textCursor().selectedText())
+        text = self.textCursor().selectedText()
         if yes and not self.hadSelection and not text == u'\u2029':
             self.hadSelection = True
             if len(text) == 1 and text in '([{}])':

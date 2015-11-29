@@ -22,7 +22,7 @@
 #  
 # 
 from PySide import QtCore, QtGui
-from styles import PythonStyle
+from src.styles import PythonStyle
 from pygments.token import Token
 
 # The code below has been taken from IPython's pygments_highlighter.py
