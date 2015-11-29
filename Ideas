@@ -3,18 +3,11 @@ Indent to the first args using spaces. Example:
 main(hello, bye, arg1, arg2\
      arg3, arg4)
 
-Check PyCharm for other ideas.
-Check Wing for other ideas.
-Check Code::Blocks for other ideas.
-Check Eric IDE for other ideas.
-
 Import templates (your own?)
 
 show "(" and ")" in red/other color when selected (match_braces)
 
 Show line at col 80
-
-Use different theme (not plastique)
 
 autocompletion
 autocompletion for paths (file names)
@@ -23,12 +16,12 @@ Bin/Oct/Hex converter
 
 Add all menuBar options
 
+Use different theme (not plastique) (own theme? (learn how to))
+
 When import, add all namespaces of the module for auto-completion
 (If import in line, then eval loc and if worked, add namespaces)
 
 code folding
-
-When there are braces, show doc str of the module and arg called with showToolTip
 
 Make my own console (pyshell) using QtGui.QDockWidget, and add it to main window 
 using self.addDockWidget. (? Use ipython console?)
@@ -37,11 +30,11 @@ Make colorscheme customizable (and editor bg) (and key bindings) (themes)
 
 flask8/pylint(like spyder, where shows unused imports and stuff...)?
 
+Reset last workspace (or files) when reopened
+
 # Key bindings
 F5 = Python2 Run (OR set as choose py2/py3) (or just your interpreter see below)
 F6 = Python3 Run (OR set as choose py2/py3) (or just your interpreter see below)
-
-Terminal in the window
 
 Debugger
 
@@ -49,17 +42,24 @@ Settings
 
 Automatic save workspace? (In settings?)
 
-Near line numbers (just after) make bar that shows lines that are edited from
-last save of file (check codeblocks)
-
-Plugins?! (make suitable for plugins (and make some?))
-
-Splash screen?! (OR AFTER IDLE-R?)
-
 FINISH HERE FOR IDLE-R AND START PROPER Python IDE
 Names???: DreamDjango(Dream/DreamCode studios?!) DreamPython (Anyone can dream)
 
-Reset last workspace (or files) when reopened
+Check PyCharm for other ideas.
+Check Wing for other ideas.
+Check Code::Blocks for other ideas.
+Check Eric IDE for other ideas.
+
+Splash screen?!
+
+Like Code::Blocks where when you edit a file after saving it, it shows a red box
+on the lines that have been edited (and green on not changed)
+
+Plugins?! (make suitable for plugins (and make some?))
+
+When there are braces, show doc str of the module and arg called with showToolTip
+
+Terminal in the window
 
 Smart code navigation (on the side, show funcs, classes etc...)
 

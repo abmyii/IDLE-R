@@ -410,11 +410,9 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Append newline to end of file
         try:
-            last = text[-1]
+            if text[-1] != '\n': text += '\n'
         except IndexError:
-            last = ''
-        
-        if last and last != '\n': text += '\n'
+            pass
 
         # Save file
         if editor.isUntitled or saveAs:
