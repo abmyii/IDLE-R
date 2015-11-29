@@ -23,8 +23,11 @@
 # 
 from PySide import QtCore, QtGui
 from styles import PythonStyle
+from pygments.token import Token
+import __builtin__
+import keyword
 
-# All of this code has been taken from IPython pygments_highlighter.py
+# The code below has been taken from IPython's pygments_highlighter.py
 from pygments.formatters.html import HtmlFormatter
 from pygments.lexer import RegexLexer, _TokenType, Text, Error
 from pygments.lexers import PythonLexer
@@ -47,8 +50,12 @@ def get_tokens_unprocessed(self, text, stack=('root',)):
             m = rexmatch(text, pos)
             if m:
                 if type(action) is _TokenType:
+                    if keyword.iskeyword(m.group()):
+                        action = Token.Keyword
+                    elif m.group() in dir(__builtin__):
+                        action = Token.Name.Builtin
                     yield pos, action, m.group()
-                else:
+                elif action:
                     for item in action(self, m):
                         yield item
                 pos = m.end()
