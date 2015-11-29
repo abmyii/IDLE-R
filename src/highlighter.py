@@ -24,8 +24,6 @@
 from PySide import QtCore, QtGui
 from styles import PythonStyle
 from pygments.token import Token
-import __builtin__
-import keyword
 
 # The code below has been taken from IPython's pygments_highlighter.py
 from pygments.formatters.html import HtmlFormatter
@@ -40,6 +38,10 @@ def get_tokens_unprocessed(self, text, stack=('root',)):
     """
     pos = 0
     tokendefs = self._tokens
+    tokens = self.tokens
+    keywords = tokens['keywords'][0][0].words
+    if 'Python' in self.name and not 'from' in keywords:
+        keywords += ('from',)
     if hasattr(self, '_saved_state_stack'):
         statestack = list(self._saved_state_stack)
     else:
@@ -50,9 +52,9 @@ def get_tokens_unprocessed(self, text, stack=('root',)):
             m = rexmatch(text, pos)
             if m:
                 if type(action) is _TokenType:
-                    if keyword.iskeyword(m.group()):
+                    if m.group() in keywords:
                         action = Token.Keyword
-                    elif m.group() in dir(__builtin__):
+                    elif m.group() in tokens['builtins'][0][0].words:
                         action = Token.Name.Builtin
                     yield pos, action, m.group()
                 elif action:
