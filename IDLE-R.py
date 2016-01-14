@@ -28,24 +28,29 @@ from datetime import date
 # Import all parts of the IDE
 from src.editor import Editor
 from src.tabBar import TabWidget
-from src.extended import QAction, StatusBar
+from src.extended import QAction, StatusBar, MenuBar
+
+def open_file(*args):
+    sep = os.path.sep
+    fname = args[0].replace('/', sep) # For other OSes
+    return open(fname, *args[1:])
 
 def make_settings():
     """
     Makes the default settings folders and files for IDLE-R
     """
     # Base folder
-    home = os.environ["HOME"]
-    if not os.path.isdir(home + '/.idle-r'):
-        os.mkdir(home + '/.idle-r')
+    home = os.path.expanduser('~') + os.path.sep
+    if not os.path.isdir(home + '.idle-r'):
+        os.mkdir(home + '.idle-r')
     
     # Workspaces folder for workspace saving
-    if not os.path.isdir(home + '/.idle-r/workspaces'):
-        os.mkdir(home + '/.idle-r/workspaces')
+    if not os.path.isdir(home + '.idle-r/workspaces'):
+        os.mkdir(home + '.idle-r/workspaces')
     
     # Recent files file
-    if not os.path.isfile(home + '/.idle-r/recent_files'):
-        with open(home + '/.idle-r/recent_files', 'w') as rfile: pass
+    if not os.path.isfile(home + '.idle-r/recent_files'):
+        with open_file(home + '.idle-r/recent_files', 'w') as rfile: pass
 
 class IDLE_R(QtGui.QMainWindow):
     
@@ -54,12 +59,13 @@ class IDLE_R(QtGui.QMainWindow):
         super(IDLE_R, self).__init__()
         self.setWindowTitle("IDLE_R")
         self.setMinimumSize(950, 600)
+        self.alt = 0
         
         # Set the number for file names
         self.file_index = 1
         
         # Add menubar
-        self.menu_bar = QtGui.QMenuBar()
+        self.menu_bar = MenuBar()
         self.setMenuBar(self.menu_bar)
         
         # Add menubar actions
@@ -70,7 +76,7 @@ class IDLE_R(QtGui.QMainWindow):
         self.setStatusBar(self.statusBar)
         
         # Add toolbar
-        self.tab_bar = TabWidget()
+        self.tab_bar = QtGui.QTabWidget()
         self.tab_bar.setMovable(True)
         
         # Set tabs to be closable
@@ -90,7 +96,9 @@ class IDLE_R(QtGui.QMainWindow):
         self.menu_bar.clear()
         
         ## Add the "File" menu ##
-        fileMenu = self.menu_bar.addMenu("File")
+        pre = "&" if self.alt else ""
+        fileMenu = self.menu_bar.addMenu(pre + "File")
+        
         action = self.newAction("New", self.newFile, "Ctrl+N")
         fileMenu.addAction(action)
         action = self.newAction("New (with Template)", self.template)
@@ -151,7 +159,7 @@ class IDLE_R(QtGui.QMainWindow):
         fileMenu.addAction(action)
         
         ## Add the "Edit" menu ##
-        editMenu = self.menu_bar.addMenu("Edit")
+        editMenu = self.menu_bar.addMenu(pre + "Edit")
         action = self.newAction("Undo", self.undo, "Ctrl+Z")
         editMenu.addAction(action)
         action = self.newAction("Redo", self.redo, "Ctrl+Shift+Z")
@@ -238,20 +246,25 @@ class IDLE_R(QtGui.QMainWindow):
             editor.cut()
     
     def deleteWorkspace(self, action):
-        home = os.environ["HOME"]
+        home = os.path.expanduser('~') + os.path.sep
         name = action
         message = "Are you sure you want to delete the workspace " + name + "?"
         delete = QtGui.QMessageBox.question(
                 self, 'Delete Workspace', message,
                 QtGui.QMessageBox.No|QtGui.QMessageBox.Yes)
         if delete == QtGui.QMessageBox.Yes:
-            os.remove(home + '/.idle-r/workspaces/' + name)
+            os.remove(home + '.idle-r/workspaces/' + name)
             self.addMenuActions()
     
     def editorUpdateStatusBar(self):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.updateStatusBar()
+    
+    def event(self, event):
+        if event.type() == QtCore.QEvent.Type.WindowDeactivate:
+            self.setAlt()
+        return super(IDLE_R, self).event(event)
         
     def find(self):
         editor = self.tab_bar.currentWidget()
@@ -264,9 +277,9 @@ class IDLE_R(QtGui.QMainWindow):
             editor.find(editor.find_text)
     
     def getWorkspaces(self):
-        home = os.environ["HOME"]
+        home = os.path.expanduser('~') + os.path.sep
         workspaces = []
-        for workspace in os.listdir(home + '/.idle-r/workspaces'):
+        for workspace in os.listdir(home + '.idle-r/workspaces'):
             workspaces.append(workspace)
         return workspaces
     
@@ -274,6 +287,11 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.goto_line()
+    
+    def keyPressEvent(self, event):
+        if event.key() == 16777251:
+            self.setAlt(self.alt ^ 1)
+        super(IDLE_R, self).keyPressEvent(event)
     
     def newAction(self, name, action, shortcut=None):
         """A function so I can make actions"""
@@ -341,7 +359,7 @@ class IDLE_R(QtGui.QMainWindow):
         self.addMenuActions()
         
         # Read file and display
-        text = open(filename, 'r').read()
+        text = open_file(filename, 'r').read()
         name = os.path.split(str(filename))[-1]
         
         # Check which way to open file & open
@@ -357,8 +375,8 @@ class IDLE_R(QtGui.QMainWindow):
         self.openFile(rfile)
     
     def openWorkspace(self, action):
-        home = os.environ["HOME"]
-        with open(home + '/.idle-r/workspaces/' + action) as workspace:
+        home = os.path.expanduser('~') + os.path.sep
+        with open_file(home + '.idle-r/workspaces/' + action) as workspace:
             data = workspace.read().split('\n')
             files = data[:-2]
             tab_index = int(data[-2])
@@ -376,9 +394,9 @@ class IDLE_R(QtGui.QMainWindow):
     
     def readRecentFile(self):
         """Returns the recent files"""
-        home = os.environ["HOME"]
+        home = os.path.expanduser('~') + os.path.sep
         top_ten = []
-        with open(home + '/.idle-r/recent_files') as recentFiles:
+        with open_file(home + '.idle-r/recent_files') as recentFiles:
             for fpath in recentFiles.read().split('\n'):
                 if os.path.isfile(fpath):
                     top_ten.append(fpath)
@@ -430,18 +448,18 @@ class IDLE_R(QtGui.QMainWindow):
                 filename += '.py'
             
             # Write to file
-            with open(filename, 'w') as f:
+            with open_file(filename, 'w') as f:
                 f.write(text)
             
             # Read file and display
-            text = open(filename, 'r').read()
+            text = open_file(filename, 'r').read()
             name = os.path.split(str(filename))[-1]
             self.newFile(name, True, editor.toPlainText(), filename, pos)
             
         else:
             # Write to file
             filename = editor.fname
-            with open(editor.fname, 'w') as f:
+            with open_file(editor.fname, 'w') as f:
                 f.write(text)
         
         # Add to recent files
@@ -497,6 +515,10 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.selectAll()
+    
+    def setAlt(self, value=0):
+        self.alt = value
+        self.addMenuActions()
         
     def setMsgBoxPos(self, msgBox):
         rect = msgBox.geometry()
@@ -509,7 +531,7 @@ class IDLE_R(QtGui.QMainWindow):
     
     def template(self):
         """Make a new file with a template"""
-        with open('templates/py.template') as template:
+        with open_file('templates/py.template') as template:
             txt = template.read()
             txt = txt.replace('<year>', str(date.today().year))
             self.newFile(text=txt)
@@ -531,15 +553,25 @@ class IDLE_R(QtGui.QMainWindow):
             else:
                 self.tab_bar.setTabText(index, name.replace('* ', ''))
     
+    def updateMenuBar(self):
+        print 'yes'
+        print QtGui.QApplication.queryKeyboardModifiers()
+        print QtGui.QApplication.keyboardModifiers()
+        if False:
+            self.addMenuActions(1)
+        else:
+            self.addMenuActions()
+        QtCore.QTimer.singleShot(1000, self.updateMenuBar)
+    
     def writeRecentFile(self, filename):
         """Write the recent files"""
-        home = os.environ["HOME"]
+        home = os.path.expanduser('~') + os.path.sep
         # Get the old data in the "recent_files" file
-        with open(home + '/.idle-r/recent_files') as f:
+        with open_file(home + '.idle-r/recent_files') as f:
             old_data = f.read().split('\n')
         
         # Write the new data
-        with open(home + '/.idle-r/recent_files', 'w') as f:
+        with open_file(home + '.idle-r/recent_files', 'w') as f:
             f.write(filename + '\n')
             # Write old data
             count = 1
@@ -554,8 +586,8 @@ class IDLE_R(QtGui.QMainWindow):
                         count += 1
         
     def writeWorkspace(self, name, files):
-        home = os.environ["HOME"]
-        with open(home + '/.idle-r/workspaces/' + name, 'w') as workspace:
+        home = os.path.expanduser('~') + os.path.sep
+        with open_file(home + '.idle-r/workspaces/' + name, 'w') as workspace:
             for f in files:
                 workspace.write(f + '\n')
             workspace.write(str(self.tab_bar.currentIndex()))

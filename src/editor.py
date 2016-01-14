@@ -94,8 +94,6 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
-                    self.setFindReplaceText)
-        self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
                     self.show_parens)
         
         # Font
@@ -229,9 +227,18 @@ class Editor(QtGui.QPlainTextEdit):
             space = ''
             hasBrace = False
             
+            # Fix where if there is a matching brace, don't add 4 spaces
+            # add 4 spaces for each brace?
             if '(' in last or '[' in last or '{' in last:
-                space += ' ' * 4
-                hasBrace = True
+                char_pos = 0
+                ind_pos = 0
+                for char in last:
+                    if char in '([{' and not self.match_braces(char, char_pos):
+                        ind_pos = char_pos
+                    char_pos += 1
+                if ind_pos:
+                    space += ' ' * 4
+                    hasBrace = True
             
             if last:
                 char = last[-1]
@@ -240,6 +247,12 @@ class Editor(QtGui.QPlainTextEdit):
                     space += '    '
                     
                 if not hasBrace and char == '\\':
+                    # Make where if the code before is an "if" then make the
+                    # next line start where the first condition started
+                    # e.g:
+                    # if yes and hello or \
+                    #(then)
+                    #    nextline
                     space += ' ' * (len(last) - 1)
             
             # Add last line's tabs to this line (keep indentaition)
@@ -307,6 +320,8 @@ class Editor(QtGui.QPlainTextEdit):
                 textCursor = QtGui.QTextCursor
                 self.moveCursor(textCursor.Right, textCursor.MoveAnchor)
             self.selectedBraces = 1
+            return 1
+        return
     
     def goto_line(self):
         line, ok = QtGui.QInputDialog.getInt(self, "Goto", "Go to Line number:")
@@ -404,11 +419,6 @@ class Editor(QtGui.QPlainTextEdit):
         rect = self.contentsRect()
         self.lineArea.setGeometry(QtCore.QRect(rect.left(), rect.top(), \
                                         self.lineAreaWidth(), rect.height()))
-    
-    def setFindReplaceText(self, yes):
-        if yes:
-            data = self.textCursor().selectedText()
-            self.find_text = self.replace_text = data
     
     def show_parens(self, yes):
         text = self.textCursor().selectedText()

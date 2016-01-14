@@ -200,3 +200,9 @@ class ReplaceDialog(QtGui.QDialog):
     
     def setPressed(self, *args):
         if args[0]: self.buttonPressed = args[0].text()
+
+class MenuBar(QtGui.QMenuBar):
+    
+    def focusOutEvent(self, event):
+        self.parent().setAlt()
+        super(MenuBar, self).focusOutEvent(event)
