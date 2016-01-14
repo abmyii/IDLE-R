@@ -23,7 +23,7 @@
 #  
 from PySide import QtCore, QtGui
 
-class TabWidget(QtGui.QTabWidget):
+class TabBar(QtGui.QTabWidget):
     
     def closeTab(self, index, saveFile, setMsgBoxPos, mainwindow):
         """Called when closing tabs"""

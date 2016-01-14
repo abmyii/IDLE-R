@@ -27,7 +27,7 @@ from datetime import date
 
 # Import all parts of the IDE
 from src.editor import Editor
-from src.tabBar import TabWidget
+from src.tabBar import TabBar
 from src.extended import QAction, StatusBar, MenuBar
 
 def open_file(*args):
@@ -75,8 +75,8 @@ class IDLE_R(QtGui.QMainWindow):
         self.statusBar = StatusBar()
         self.setStatusBar(self.statusBar)
         
-        # Add toolbar
-        self.tab_bar = QtGui.QTabWidget()
+        # Add tab bar
+        self.tab_bar = TabBar()
         self.tab_bar.setMovable(True)
         
         # Set tabs to be closable
@@ -294,7 +294,7 @@ class IDLE_R(QtGui.QMainWindow):
         super(IDLE_R, self).keyPressEvent(event)
     
     def newAction(self, name, action, shortcut=None):
-        """A function so I can make actions"""
+        """Make actions quickly"""
         Action = QtGui.QAction(name, self)
         Action.triggered.connect(action)
         if shortcut:
