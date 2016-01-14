@@ -553,16 +553,6 @@ class IDLE_R(QtGui.QMainWindow):
             else:
                 self.tab_bar.setTabText(index, name.replace('* ', ''))
     
-    def updateMenuBar(self):
-        print 'yes'
-        print QtGui.QApplication.queryKeyboardModifiers()
-        print QtGui.QApplication.keyboardModifiers()
-        if False:
-            self.addMenuActions(1)
-        else:
-            self.addMenuActions()
-        QtCore.QTimer.singleShot(1000, self.updateMenuBar)
-    
     def writeRecentFile(self, filename):
         """Write the recent files"""
         home = os.path.expanduser('~') + os.path.sep
