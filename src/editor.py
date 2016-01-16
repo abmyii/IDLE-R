@@ -55,8 +55,6 @@ class Editor(QtGui.QPlainTextEdit):
     replace_caseSensitive = 0
     replace_wholeWord = 0
     replace_backward = 0
-    opening_brackets = []
-    closings_brackets = []
     hadSelection = False
     
     def __init__(self, statusBar):
@@ -193,10 +191,10 @@ class Editor(QtGui.QPlainTextEdit):
     def setModified(self, modified):
         return self.document().setModified(modified)
     
-    def keyPressEvent(self, QKeyEvent):
+    def keyPressEvent(self, event):
         """Handle keypress events"""
         pos = self.textCursor().position()
-        text = QKeyEvent.text()
+        text = event.text()
         last = self.document().findBlock(pos).text().strip()
         
         if self.selectedBraces:
@@ -233,7 +231,7 @@ class Editor(QtGui.QPlainTextEdit):
                 char_pos = 0
                 ind_pos = 0
                 for char in last:
-                    if char in '([{' and not self.match_braces(char, char_pos):
+                    if char in '([{' and not self.matchBraces(char, char_pos):
                         ind_pos = char_pos
                     char_pos += 1
                 if ind_pos:
@@ -274,53 +272,50 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Show brace formatting
         elif text and text in '([{}])':
-            super(Editor, self).keyPressEvent(QKeyEvent)
+            super(Editor, self).keyPressEvent(event)
             if text in '([{': # Check for closing (color red if no match)
-                self.match_braces(text, pos)
+                self.matchBraces(text, pos, highlight=True)
             if text in ')]}': # Check for opening (color red if no match)
-                self.match_braces(text, pos, True)
+                self.matchBraces(text, pos, True, highlight=True)
             return
             
-        super(Editor, self).keyPressEvent(QKeyEvent)
+        super(Editor, self).keyPressEvent(event)
             
         if not self.textCursor().hasSelection() and self.selectedBraces:
             self.selectedBraces = 0
     
-    def match_braces(self, brace, pos, bw=False):
-        brace_pos = None
-        text = ''
-        no_close_brace = False # To check if a brace is already taken
-        if bw:
-            searchText = self.toPlainText()[:pos][::-1]
-            checkBraces = '([{'
-        else:
+    def matchBraces(self, brace, pos, close=False, highlight=False):
+        if not close:
             searchText = self.toPlainText()[pos + 1:]
-            checkBraces = '}])'
-            
-        for text in enumerate(searchText):
-            if text[1] and text[1] == brace:
-                no_close_brace = True
-            if text[1] and text[1] in checkBraces:
-                if no_close_brace:
-                    no_close_brace = False
+            other = {'(': ')', '[': ']', '{': '}'}.get(brace)
+        else:
+            searchText = self.toPlainText()[:pos][::-1]
+            other = {')': '(', ']': '[', '}': '{'}.get(brace)
+        level = 0  # for if there are other open/close brackets
+        for char in enumerate(searchText):
+            if char[1] == other:
+                if level:
+                    # We found the opposite brace, but for another open brace
+                    level -= 1
                 else:
-                    brace_pos = pos - text[0] if bw else pos + text[0]
-                    break
-                
-        if brace_pos:
-            if bw:
-                right = brace_pos - 1
-                anchor_right = (pos - brace_pos)
-            else:
-                right = pos
-                anchor_right = (brace_pos - pos)
-            for _ in range(right):
-                self.moveCursor(QtGui.QTextCursor.Right)
-            for _ in range(anchor_right + 2):
-                textCursor = QtGui.QTextCursor
-                self.moveCursor(textCursor.Right, textCursor.MoveAnchor)
-            self.selectedBraces = 1
-            return 1
+                    # We found the opposite brace for the origional brace
+                    newpos = pos - 1 - char[0] if close else pos + 1 + char[0]
+                    position = (newpos, pos) if close else (pos, newpos)
+                    if not highlight:
+                        return position
+                    else:
+                        cursor = QtGui.QTextCursor
+                        self.moveCursor(cursor.Start, cursor.MoveAnchor)
+                        mv = position[0 if close else 1] + (0 if close else 1)
+                        for _ in range(mv):
+                            self.moveCursor(cursor.Right, cursor.MoveAnchor)
+                        mvtype = cursor.Right if close else cursor.Left
+                        for _ in range(position[1] - position[0] + 1):
+                            self.moveCursor(mvtype, cursor.KeepAnchor)
+                        self.selectedBraces = 1
+            elif char[1] == brace:
+                # If there is another identical brace, increment level
+                level += 1
         return
     
     def goto_line(self):
@@ -426,7 +421,7 @@ class Editor(QtGui.QPlainTextEdit):
             self.hadSelection = True
             if len(text) == 1 and text in '([{}])':
                 pos = self.textCursor().selectionStart()
-                self.match_braces(text, pos, True if text in '}])' else False)
+                self.matchBraces(text, pos, True if text in '}])' else False)
         elif yes:
             self.hadSelection = False
     
