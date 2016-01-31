@@ -85,7 +85,8 @@ class Editor(QtGui.QPlainTextEdit):
         self.lineArea = LineArea(self)
         
         # Connect relevant signals to line number widget
-        self.connect(self, QtCore.SIGNAL('blockCountChanged(int)'), \
+        # (fix) not working properly sometimes
+        self.connect(self, QtCore.SIGNAL('cursorPositionChanged()'), \
                     self.updateLineAreaWidth)
         self.connect(self, QtCore.SIGNAL('updateRequest(QRect, int)'), \
                     self.updateLineArea)
@@ -106,7 +107,7 @@ class Editor(QtGui.QPlainTextEdit):
         self.setCursorWidth(self.cursorWidth() * 2)
         
         # Initialize Line number widget
-        self.updateLineAreaWidth(0)
+        self.updateLineAreaWidth()
     
     def autocomplete(self):
         # NOTES:
@@ -224,19 +225,22 @@ class Editor(QtGui.QPlainTextEdit):
         elif text in ['\r', '\n']:
             space = ''
             hasBrace = False
+            subtract = 0
             
-            # Fix where if there is a matching brace, don't add 4 spaces
-            # add 4 spaces for each brace?
-            if '(' in last or '[' in last or '{' in last:
-                char_pos = 0
-                ind_pos = 0
-                for char in last:
-                    if char in '([{' and not self.matchBraces(char, char_pos):
-                        ind_pos = char_pos
-                    char_pos += 1
-                if ind_pos:
-                    space += ' ' * 4
-                    hasBrace = True
+            # Add spaces for when cursor is in a brace that is not opened/closed
+            char_pos = pos - len(last)
+            ind_pos = 0
+            for char in last:
+                if char in '([{}])':
+                    close = False if char in '([{' else True
+                    if not self.matchBraces(char, char_pos, close):
+                        ind_pos += 1
+                    else:
+                        subtract -= 4
+                char_pos += 1
+            if ind_pos:
+                space += ' ' * (4 * ind_pos)
+                hasBrace = True
             
             if last:
                 char = last[-1]
@@ -245,29 +249,31 @@ class Editor(QtGui.QPlainTextEdit):
                     space += '    '
                     
                 if not hasBrace and char == '\\':
-                    # Make where if the code before is an "if" then make the
-                    # next line start where the first condition started
-                    # e.g:
-                    # if yes and hello or \
-                    #(then)
-                    #    nextline
-                    space += ' ' * (len(last) - 1)
+                    # Add extra spaces if there is a \ at the end of the line
+                    space += ' ' * 4
             
             # Add last line's tabs to this line (keep indentaition)
             for char in self.document().findBlock(pos).text():
-                if char != ' ':
-                    break
-                space += ' '
+                if not subtract:
+                    if char != ' ':
+                        break
+                    space += ' '
+                else:
+                    subtract += 1
 
-            # Dedent if last word is pass or continue or break
-            if last in ['break', 'continue', 'pass']:
+            # Dedent if last word is one of the block-ending words
+            if last in ['break', 'continue', 'pass', 'yield']:
                 space = space[:-4]
+            
+            if subtract:
+                space = space[:subtract]
             
             # Insert text and space
             self.textCursor().beginEditBlock()
             self.insertPlainText('\n' + space)
             self.textCursor().endEditBlock()
             self.ensureCursorVisible()
+            self.update()
             return
         
         # Show brace formatting
@@ -304,15 +310,12 @@ class Editor(QtGui.QPlainTextEdit):
                     if not highlight:
                         return position
                     else:
-                        cursor = QtGui.QTextCursor
-                        self.moveCursor(cursor.Start, cursor.MoveAnchor)
-                        mv = position[0 if close else 1] + (0 if close else 1)
-                        for _ in range(mv):
-                            self.moveCursor(cursor.Right, cursor.MoveAnchor)
-                        mvtype = cursor.Right if close else cursor.Left
-                        for _ in range(position[1] - position[0] + 1):
-                            self.moveCursor(mvtype, cursor.KeepAnchor)
-                        self.selectedBraces = 1
+                        cursor = self.textCursor()
+                        cursor.setPosition(position[0])
+                        cursor.setPosition(position[1] + 1, cursor.KeepAnchor)
+                        self.setTextCursor(cursor)
+                        self.selectedBraces = True
+                        return 1
             elif char[1] == brace:
                 # If there is another identical brace, increment level
                 level += 1
@@ -434,9 +437,9 @@ class Editor(QtGui.QPlainTextEdit):
             self.lineArea.update(0, rect.y(), \
                                  self.lineArea.width(), rect.height())
         if rect.contains(self.viewport().rect()):
-            self.updateLineAreaWidth(0)
+            self.updateLineAreaWidth()
     
-    def updateLineAreaWidth(self, blocks):
+    def updateLineAreaWidth(self):
         self.setViewportMargins(self.lineAreaWidth(), 0, 0, 0)
     
     def updateStatusBar(self):

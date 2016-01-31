@@ -589,6 +589,8 @@ if __name__ == '__main__':
     # Run the IDE
     QtGui.QApplication.setStyle("plastique")
     app = QtGui.QApplication(sys.argv)
+    with open('theme/style.qss') as stylesheet:
+        app.setStyleSheet(stylesheet.read())
     window = IDLE_R()
     window.show()
     sys.exit(app.exec_())

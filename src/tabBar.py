@@ -72,5 +72,5 @@ class TabBar(QtGui.QTabWidget):
             point -= QtCore.QPoint(0, 55)  # Space between win & tab bar
             self.closeTab(self.tabBar().tabAt(point))
         else:
-            super(TabWidget, self).mousePressEvent(event)
+            super(TabBar, self).mousePressEvent(event)
 
