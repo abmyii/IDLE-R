@@ -25,6 +25,15 @@ from PySide import QtCore, QtGui
 
 class TabBar(QtGui.QTabWidget):
     
+    def __init__(self, parent):
+        super(TabBar, self).__init__(parent)
+        
+        # Draw the plus button
+        button = QtGui.QPushButton(QtGui.QIcon("images/plus.png"), '')
+        button.setFlat(True)
+        button.pressed.connect(parent.newFile)
+        self.setCornerWidget(button)
+    
     def closeTab(self, index, saveFile, setMsgBoxPos, mainwindow):
         """Called when closing tabs"""
         old_index = self.currentIndex()
@@ -70,7 +79,8 @@ class TabBar(QtGui.QTabWidget):
         if event.button().__int__() is 4:  # MMB
             point = event.globalPos() - self.parentWidget().pos()
             point -= QtCore.QPoint(0, 55)  # Space between win & tab bar
-            self.closeTab(self.tabBar().tabAt(point))
+            parent = self.parent()  # Shorter variable name
+            self.closeTab(self.tabBar().tabAt(point),
+                        parent.saveFile, parent.setMsgBoxPos, parent)
         else:
             super(TabBar, self).mousePressEvent(event)
-

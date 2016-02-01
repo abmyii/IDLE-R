@@ -76,7 +76,7 @@ class IDLE_R(QtGui.QMainWindow):
         self.setStatusBar(self.statusBar)
         
         # Add tab bar
-        self.tab_bar = TabBar()
+        self.tab_bar = TabBar(self)
         self.tab_bar.setMovable(True)
         
         # Set tabs to be closable
