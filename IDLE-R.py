@@ -48,6 +48,10 @@ def make_settings():
     if not os.path.isdir(home + '.idle-r/workspaces'):
         os.mkdir(home + '.idle-r/workspaces')
     
+    # Templates folder for workspace saving
+    if not os.path.isdir(home + '.idle-r/templates'):
+        os.mkdir(home + '.idle-r/templates')
+    
     # Recent files file
     if not os.path.isfile(home + '.idle-r/recent_files'):
         with open_file(home + '.idle-r/recent_files', 'w') as rfile: pass
@@ -101,8 +105,15 @@ class IDLE_R(QtGui.QMainWindow):
         
         action = self.newAction("New", self.newFile, "Ctrl+N")
         fileMenu.addAction(action)
-        action = self.newAction("New (with Template)", self.template)
-        fileMenu.addAction(action)
+        
+        # Add the templates menu
+        menu = fileMenu.addMenu("New (with Template)")
+        for template in self.getTemplates():
+            if template:
+                Template = QAction(template, self, self.openTemplate)
+                Template.setStatusTip(self.readTemplate(template, tooltip=True))
+                menu.addAction(Template)
+
         action = self.newAction("Open...", self.openFile, "Ctrl+O")
         fileMenu.addAction(action)
         
@@ -275,6 +286,16 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.find(editor.find_text)
+
+    def getTemplates(self):
+        home = os.path.expanduser('~') + os.path.sep
+        templates = []
+        for template in os.listdir(home + '.idle-r/templates'):
+            templates.append(home + '.idle-r/templates/' + template)
+        if os.path.isdir('templates'):
+            for template in os.listdir('templates'):
+                templates.append('templates/' + template)
+        return templates
     
     def getWorkspaces(self):
         home = os.path.expanduser('~') + os.path.sep
@@ -374,6 +395,10 @@ class IDLE_R(QtGui.QMainWindow):
         """Open a recent file"""
         self.openFile(rfile)
     
+    def openTemplate(self, template):
+        """Load a template"""
+        self.readTemplate(template)
+    
     def openWorkspace(self, action):
         home = os.path.expanduser('~') + os.path.sep
         with open_file(home + '.idle-r/workspaces/' + action) as workspace:
@@ -403,6 +428,39 @@ class IDLE_R(QtGui.QMainWindow):
                 if len(top_ten) is 10:
                     break
             return top_ten
+    
+    def readTemplate(self, template_file, tooltip=False):
+        """Work with templates"""
+        with open_file(template_file) as template:
+            # Initialize
+            txt = template.read().split('\n')
+            info = []
+            text = []
+            inInfo = True
+            
+            # Process the lines
+            for line in txt:
+                if line[:3] == '***' and inInfo:
+                    inInfo = False
+                elif inInfo:
+                    info += [line]
+                else:
+                    text += [line]
+
+            # Remove the last line if it is blank
+            if not line:
+                text.pop()
+            
+            # Join the text together
+            info = '\n'.join(info)
+            text = '\n'.join(text)
+            
+            # Return the text
+            text = text.replace('<year>', str(date.today().year))
+            if tooltip:
+                return info
+            else:
+                self.newFile(text=text)
     
     def redo(self):
         editor = self.tab_bar.currentWidget()
@@ -528,13 +586,6 @@ class IDLE_R(QtGui.QMainWindow):
         rect.moveCenter(pos)
         msgBox.setGeometry(rect)
         return msgBox
-    
-    def template(self):
-        """Make a new file with a template"""
-        with open_file('templates/py.template') as template:
-            txt = template.read()
-            txt = txt.replace('<year>', str(date.today().year))
-            self.newFile(text=txt)
     
     def undo(self):
         editor = self.tab_bar.currentWidget()
