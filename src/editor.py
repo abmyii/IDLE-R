@@ -329,7 +329,6 @@ class Editor(QtGui.QPlainTextEdit):
                 self.moveCursor(QtGui.QTextCursor.Down)
     
     def highlight_current_line(self):
-        if self.hadSelection: return # Pass if just showing parens
         selections = []
         
         selection = QtGui.QTextEdit.ExtraSelection()
