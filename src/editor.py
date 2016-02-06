@@ -38,6 +38,11 @@ class LineArea(QtGui.QWidget):
     def paintEvent(self, event):
         self.editor.lineAreaPaintEvent(event)
 
+class ColumnLine(LineArea):
+
+    def paintEvent(self, event):
+        self.editor.columnLinePaintEvent(event)
+
 class Editor(QtGui.QPlainTextEdit):
     isUntitled = False
     fname = ''
@@ -62,6 +67,13 @@ class Editor(QtGui.QPlainTextEdit):
     def __init__(self, statusBar):
         super(Editor, self).__init__()
         
+        # Set the Font
+        font = QtGui.QFont()
+        font.setFamily('Courier')
+        font.setFixedPitch(True)
+        font.setPointSize(10)
+        self.setFont(font)
+        
         # Status bar
         self.statusBar = statusBar
         
@@ -78,16 +90,21 @@ class Editor(QtGui.QPlainTextEdit):
                     self.updateStatusBar)
         self.updateStatusBar()
         
-        # Disable line wrapping and fix other settings
-        self.enableLineNumbers = True
+        # Remove frame and set line wrap mode
         self.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
         self.setFrameShape(QtGui.QFrame.NoFrame)
         
+        # Draw the column line
+        self.enableColumnLine = True
+        self.columnLine = ColumnLine(self)
+        fm = self.fontMetrics()
+        self.columnLine.setGeometry((0.5 + fm.width('0')) * 80, 0, 1, 1000)
+        
         # Create line number widget
+        self.enableLineNumbers = True
         self.lineArea = LineArea(self)
         
         # Connect relevant signals to line number widget
-        # (fix) not working properly sometimes
         self.connect(self, QtCore.SIGNAL('cursorPositionChanged()'), \
                     self.updateLineAreaWidth)
         self.connect(self, QtCore.SIGNAL('updateRequest(QRect, int)'), \
@@ -96,13 +113,6 @@ class Editor(QtGui.QPlainTextEdit):
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
                     self.show_parens)
-        
-        # Font
-        font = QtGui.QFont()
-        font.setFamily('Courier')
-        font.setFixedPitch(True)
-        font.setPointSize(10)
-        self.setFont(font)
         
         # Tab & Cursor width
         self.setTabStopWidth(self.tabStopWidth() / 2)
@@ -119,6 +129,17 @@ class Editor(QtGui.QPlainTextEdit):
         # If double Tab (quick taps?) and word under cursor, just tab. (TWEAK!)
         # If text under cursor >= 3 letters show
         pass
+    
+    def columnLinePaintEvent(self, event):
+        if self.enableColumnLine:
+            # Repaint on top first
+            self.update()
+            
+            # Draw column line area
+            painter = QtGui.QPainter(self.columnLine)
+            color = QtGui.QColor("#22aa33")
+            color.setAlpha(80)
+            painter.fillRect(event.rect(), color)
     
     def find(self, text='', pos=None, comp=False, states={}):
         # Check and get text if none was given
@@ -188,11 +209,34 @@ class Editor(QtGui.QPlainTextEdit):
                     self.find(text, 0, comp, states)
             elif comp: return False
     
+    def goto_line(self):
+        line, ok = QtGui.QInputDialog.getInt(self, "Goto", "Go to Line number:")
+        if ok:
+            self.moveCursor(QtGui.QTextCursor.Start)
+            for _ in range(line - 1):
+                self.moveCursor(QtGui.QTextCursor.Down)
+    
+    def highlight_current_line(self):
+        selection = QtGui.QTextEdit.ExtraSelection()
+        lineColor = QtGui.QColor("#858585")
+        lineColor.setAlpha(20)
+
+        selection.format.setBackground(lineColor)
+        selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
+        selection.cursor = self.textCursor()
+        selection.cursor.clearSelection()
+        self.setExtraSelections([selection])
+    
+    def isInTemplate(self):
+        find = self.toPlainText().find('<', self.templateStart)
+        if find == -1:
+            self.inTemplate = False
+            return
+        self.matchBraces('<', find, select=False, highlight=True)
+        self.templateStart = find + 1
+    
     def isModified(self):
         return self.document().isModified()
-        
-    def setModified(self, modified):
-        return self.document().setModified(modified)
     
     def keyPressEvent(self, event):
         """Handle keypress events"""
@@ -228,7 +272,6 @@ class Editor(QtGui.QPlainTextEdit):
             elif not txt[posInBlock-4:posInBlock].strip():
                 dedent = 4
             if dedent:
-                print dedent
                 for i in range(dedent):
                     self.textCursor().deletePreviousChar()
                 return
@@ -302,7 +345,7 @@ class Editor(QtGui.QPlainTextEdit):
             if text in ')]}':
                 self.matchBraces(text, pos, True, highlight=True)
             return
-            
+        
         super(Editor, self).keyPressEvent(event)
             
         if not self.textCursor().hasSelection() and self.selectedBraces:
@@ -339,31 +382,13 @@ class Editor(QtGui.QPlainTextEdit):
                 level += 1
         return
     
-    def goto_line(self):
-        line, ok = QtGui.QInputDialog.getInt(self, "Goto", "Go to Line number:")
-        if ok:
-            self.moveCursor(QtGui.QTextCursor.Start)
-            for _ in range(line - 1):
-                self.moveCursor(QtGui.QTextCursor.Down)
-    
-    def highlight_current_line(self):
-        selection = QtGui.QTextEdit.ExtraSelection()
-        lineColor = QtGui.QColor("#858585")
-        lineColor.setAlpha(20)
-
-        selection.format.setBackground(lineColor)
-        selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
-        selection.cursor = self.textCursor()
-        selection.cursor.clearSelection()
-        self.setExtraSelections([selection])
-    
     def lineAreaPaintEvent(self, event):
         # Draw gutter area
         painter = QtGui.QPainter(self.lineArea)
         painter.fillRect(event.rect(), QtGui.QColor('#C4C4C4'))
 
         # Match editor font
-        painter.setFont(QtGui.QFont())
+        painter.setFont(self.font())
 
         # Calculate geometry
         firstBlock = self.firstVisibleBlock()
@@ -438,13 +463,8 @@ class Editor(QtGui.QPlainTextEdit):
             self.inTemplate = True
             self.isInTemplate()
     
-    def isInTemplate(self):
-        find = self.toPlainText().find('<', self.templateStart)
-        if find == -1:
-            self.inTemplate = False
-            return
-        self.matchBraces('<', find, select=False, highlight=True)
-        self.templateStart = find + 1
+    def setModified(self, modified):
+        return self.document().setModified(modified)
     
     def show_parens(self, yes):
         text = self.textCursor().selectedText()
@@ -457,13 +477,12 @@ class Editor(QtGui.QPlainTextEdit):
             self.hadSelection = False
     
     def updateLineArea(self, rect, dy):
-        if self.hadSelection: return # Pass if just showing parens
         # Respond to a scroll event
         if dy:
             self.lineArea.scroll(0, dy)
         else:
             self.lineArea.update(0, rect.y(), \
-                                 self.lineArea.width(), rect.height())
+                                self.lineArea.width(), rect.height())
         if rect.contains(self.viewport().rect()):
             self.updateLineAreaWidth()
     
@@ -471,7 +490,6 @@ class Editor(QtGui.QPlainTextEdit):
         self.setViewportMargins(self.lineAreaWidth(), 0, 0, 0)
     
     def updateStatusBar(self):
-        if self.hadSelection: return # Pass if just showing parens
         message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()
