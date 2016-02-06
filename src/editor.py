@@ -3,7 +3,7 @@
 #
 #  editor.py
 #  
-#  Copyright 2015 abmyii
+#  Copyright 2015-2016 abmyii
 #  
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -56,6 +56,8 @@ class Editor(QtGui.QPlainTextEdit):
     replace_wholeWord = 0
     replace_backward = 0
     hadSelection = False
+    inTemplate = False
+    templateStart = 0
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
@@ -197,6 +199,19 @@ class Editor(QtGui.QPlainTextEdit):
         pos = self.textCursor().position()
         text = event.text()
         last = self.document().findBlock(pos).text().strip()
+        # Make where when there is an undo, don't undo tabs (spaces?) and words
+        
+        if self.inTemplate:
+            if text == '\t':
+                self.isInTemplate()
+                return
+            elif text == u'\x1b':  # Key escape
+                if self.textCursor().hasSelection():
+                    # Move the text cursor to deselect
+                    self.moveCursor(QtGui.QTextCursor.Left)
+                    self.moveCursor(QtGui.QTextCursor.Right)
+                self.inTemplate = False
+                return
         
         if self.selectedBraces:
             cursor = self.textCursor()
@@ -213,13 +228,16 @@ class Editor(QtGui.QPlainTextEdit):
             elif not txt[posInBlock-4:posInBlock].strip():
                 dedent = 4
             if dedent:
+                print dedent
                 for i in range(dedent):
                     self.textCursor().deletePreviousChar()
                 return
         
         # Insert spaces instead of tabs
         elif text == '\t':
+            self.textCursor().beginEditBlock()
             self.insertPlainText('    ')
+            self.textCursor().endEditBlock()
             return
             
         elif text in ['\r', '\n']:
@@ -279,9 +297,9 @@ class Editor(QtGui.QPlainTextEdit):
         # Show brace formatting
         elif text and text in '([{}])':
             super(Editor, self).keyPressEvent(event)
-            if text in '([{': # Check for closing (color red if no match)
+            if text in '([{':
                 self.matchBraces(text, pos, highlight=True)
-            if text in ')]}': # Check for opening (color red if no match)
+            if text in ')]}':
                 self.matchBraces(text, pos, True, highlight=True)
             return
             
@@ -290,13 +308,13 @@ class Editor(QtGui.QPlainTextEdit):
         if not self.textCursor().hasSelection() and self.selectedBraces:
             self.selectedBraces = 0
     
-    def matchBraces(self, brace, pos, close=False, highlight=False):
+    def matchBraces(self, brace, pos, close=False, highlight=False, select=1):
         if not close:
             searchText = self.toPlainText()[pos + 1:]
-            other = {'(': ')', '[': ']', '{': '}'}.get(brace)
+            other = {'(': ')', '[': ']', '{': '}', '<': '>'}.get(brace)
         else:
             searchText = self.toPlainText()[:pos][::-1]
-            other = {')': '(', ']': '[', '}': '{'}.get(brace)
+            other = {')': '(', ']': '[', '}': '{', '>': '<'}.get(brace)
         level = 0  # for if there are other open/close brackets
         for char in enumerate(searchText):
             if char[1] == other:
@@ -309,13 +327,13 @@ class Editor(QtGui.QPlainTextEdit):
                     position = (newpos, pos) if close else (pos, newpos)
                     if not highlight:
                         return position
-                    else:
-                        cursor = self.textCursor()
-                        cursor.setPosition(position[0])
-                        cursor.setPosition(position[1] + 1, cursor.KeepAnchor)
-                        self.setTextCursor(cursor)
+                    cursor = self.textCursor()
+                    cursor.setPosition(position[0])
+                    cursor.setPosition(position[1] + 1, cursor.KeepAnchor)
+                    self.setTextCursor(cursor)
+                    if select:
                         self.selectedBraces = True
-                        return 1
+                    return 1
             elif char[1] == brace:
                 # If there is another identical brace, increment level
                 level += 1
@@ -329,8 +347,6 @@ class Editor(QtGui.QPlainTextEdit):
                 self.moveCursor(QtGui.QTextCursor.Down)
     
     def highlight_current_line(self):
-        selections = []
-        
         selection = QtGui.QTextEdit.ExtraSelection()
         lineColor = QtGui.QColor("#858585")
         lineColor.setAlpha(20)
@@ -339,8 +355,7 @@ class Editor(QtGui.QPlainTextEdit):
         selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
         selection.cursor = self.textCursor()
         selection.cursor.clearSelection()
-        selections.append(selection)
-        self.setExtraSelections(selections)
+        self.setExtraSelections([selection])
     
     def lineAreaPaintEvent(self, event):
         # Draw gutter area
@@ -416,6 +431,20 @@ class Editor(QtGui.QPlainTextEdit):
         rect = self.contentsRect()
         self.lineArea.setGeometry(QtCore.QRect(rect.left(), rect.top(), \
                                         self.lineAreaWidth(), rect.height()))
+    
+    def setFocus(self, isTemplate=False):
+        super(Editor, self).setFocus()
+        if isTemplate:
+            self.inTemplate = True
+            self.isInTemplate()
+    
+    def isInTemplate(self):
+        find = self.toPlainText().find('<', self.templateStart)
+        if find == -1:
+            self.inTemplate = False
+            return
+        self.matchBraces('<', find, select=False, highlight=True)
+        self.templateStart = find + 1
     
     def show_parens(self, yes):
         text = self.textCursor().selectedText()

@@ -4,11 +4,13 @@ Default template for python
 # -*- coding: utf-8 -*-
 #
 #  <untitled>.py
-#  
+#
+#  Copyright <year> <name> (<email>@<provider>.com)
+#
 
 def main():
 
-    return 0
+    return
 
 if __name__ == '__main__':
     main()

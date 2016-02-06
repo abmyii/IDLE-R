@@ -3,7 +3,7 @@
 #
 #  IDLE-R.py
 #
-#  Copyright 2015 abmyii
+#  Copyright 2015-2016 abmyii
 #
 #  This program is free software; you can redistribute it and/or modify
 #  it under the terms of the GNU General Public License as published by
@@ -291,10 +291,12 @@ class IDLE_R(QtGui.QMainWindow):
         home = os.path.expanduser('~') + os.path.sep
         templates = []
         for template in os.listdir(home + '.idle-r/templates'):
-            templates.append(home + '.idle-r/templates/' + template)
+            if not template[0] == '.':  # Not a hidden file
+                templates.append(home + '.idle-r/templates/' + template)
         if os.path.isdir('templates'):
             for template in os.listdir('templates'):
-                templates.append('templates/' + template)
+                if not template[0] == '.':  # Not a hidden file
+                    templates.append('templates/' + template)
         return templates
     
     def getWorkspaces(self):
@@ -322,7 +324,7 @@ class IDLE_R(QtGui.QMainWindow):
             Action.setShortcut(shortcut)
         return Action
         
-    def newFile(self, name=0, ow=0, text=0, fname=0, cpos=0):
+    def newFile(self, name=0, ow=0, text=0, fname=0, cpos=0, template=0):
         """Make a new file"""
         if name:
             name = name
@@ -338,8 +340,8 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Add given text if any
         if text:
-            editor.isUntitled = False
-            editor.fname = fname
+            if not template:
+                editor.isUntitled = False
             editor.setPlainText(text)
             
             # Set cursor pos
@@ -355,7 +357,7 @@ class IDLE_R(QtGui.QMainWindow):
         self.tab_bar.setCurrentIndex(tab)
         
         # Set focus to the editor
-        editor.setFocus()
+        editor.setFocus(True if template else False)
 
     def newShortcut(self, action, shortcut):
         """A function so I can make keyboard shortcuts"""
@@ -460,7 +462,7 @@ class IDLE_R(QtGui.QMainWindow):
             if tooltip:
                 return info
             else:
-                self.newFile(text=text)
+                self.newFile(text=text, template=True)
     
     def redo(self):
         editor = self.tab_bar.currentWidget()
