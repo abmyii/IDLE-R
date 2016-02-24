@@ -166,6 +166,8 @@ class IDLE_R(QtGui.QMainWindow):
         # Closing and quiting
         action = self.newAction("Close", self.closeTab, "Ctrl+W")
         fileMenu.addAction(action)
+        action = self.newAction("Close All", self.closeTabs, "Ctrl+Shift+W")
+        fileMenu.addAction(action)
         action = self.newAction("Quit", self.close, "Ctrl+Q")
         fileMenu.addAction(action)
         
@@ -238,8 +240,14 @@ class IDLE_R(QtGui.QMainWindow):
         else:
             super(IDLE_R, self).close()
     
-    def closeTab(self, index):
+    def closeTab(self, index=-1):
+        if index == -1:
+            index = self.tab_bar.currentIndex()
         self.tab_bar.closeTab(index, self.saveFile, self.setMsgBoxPos, self)
+        
+    def closeTabs(self):
+        for index in range(self.tab_bar.count(), -1, -1):
+            self.closeTab(index)
     
     def comps(self):
         editor = self.tab_bar.currentWidget()
