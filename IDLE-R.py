@@ -56,6 +56,37 @@ def make_settings():
     if not os.path.isfile(home + '.idle-r/recent_files'):
         with open_file(home + '.idle-r/recent_files', 'w') as rfile: pass
 
+class AboutIDLE_R(QtGui.QDialog):
+
+    def __init__(self, parent=None):
+        QtGui.QDialog.__init__(self, parent, QtCore.Qt.Dialog)
+        self.setWindowTitle("About IDLE-R")
+        self.setMaximumSize(QtCore.QSize(0, 0))
+
+        vbox = QtGui.QVBoxLayout(self)
+
+        #Create an icon for the Dialog
+        pixmap = QtGui.QPixmap('images/icon.png')
+        self.lblIcon = QtGui.QLabel()
+        self.lblIcon.setPixmap(pixmap)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(self.lblIcon)
+
+        lblTitle = QtGui.QLabel(
+"<h1>IDLE-R</h1>\n<i>Intergrated Development Learning Environment Reimagined<i>"
+)
+        lblTitle.setTextFormat(QtCore.Qt.RichText)
+        lblTitle.setAlignment(QtCore.Qt.AlignLeft)
+        hbox.addWidget(lblTitle)
+        vbox.addLayout(hbox)
+        #Add description
+        vbox.addWidget(QtGui.QLabel("""
+IDLE-R (Intergrated Development Learning Environment Reimagined), is a
+clone of IDLE but with fixes to make it more user and learner friendly.
+"""
+))
+
 class IDLE_R(QtGui.QMainWindow):
     
     def __init__(self):
@@ -203,8 +234,33 @@ class IDLE_R(QtGui.QMainWindow):
         editMenu.addAction(action)
         action = self.newAction("Go to Line", self.goto_line, "Alt+G")
         editMenu.addAction(action)
-        action = self.newAction("Show Completions", self.comps, "Ctrl+Space")
+        action = self.newAction("Show Completions", self.showCompletions, "Ctrl+Space")
         editMenu.addAction(action)
+        
+        ## Add the "Debug" menu ##
+        debugMenu = self.menu_bar.addMenu(pre + "Debug")
+        action = self.newAction("Debugger", self.start_debugger)
+        debugMenu.addAction(action)
+        action = self.newAction("Stack Viewer", self.stack_viewer)
+        debugMenu.addAction(action)
+        action = self.newAction("Auto-open Stack Viewer", self.auto_stack_view)
+        debugMenu.addAction(action)
+        
+        ## Add the "Help" menu ##
+        helpMenu = self.menu_bar.addMenu(pre + "Help")
+        action = self.newAction("About IDLE-R", self.about)
+        helpMenu.addAction(action)
+        action = self.newAction("About Qt", self.about_qt)
+        helpMenu.addAction(action)
+    
+    def about(self):
+        AboutIDLE_R(self).show()
+    
+    def about_qt(self):
+        QtGui.QMessageBox.aboutQt(self, 'About Qt')
+    
+    def auto_stack_view(self):
+        pass
     
     def closeEvent(self, QCloseEvent):
         edited = False
@@ -236,7 +292,7 @@ class IDLE_R(QtGui.QMainWindow):
             if ret == msgBox.Discard:
                 super(IDLE_R, self).close()
             else:
-                QCloseEvent.ignore()
+                QtGui.QCloseEvent.ignore()
         else:
             super(IDLE_R, self).close()
     
@@ -315,6 +371,11 @@ class IDLE_R(QtGui.QMainWindow):
         return workspaces
     
     def goto_line(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.goto_line()
+    
+    def goto_file_line(self):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.goto_line()
@@ -585,8 +646,9 @@ class IDLE_R(QtGui.QMainWindow):
             editor.selectAll()
     
     def setAlt(self, value=0):
-        self.alt = value
-        self.addMenuActions()
+        if self.alt != value:
+            self.alt = value
+            self.addMenuActions()
         
     def setMsgBoxPos(self, msgBox):
         rect = msgBox.geometry()
@@ -596,6 +658,15 @@ class IDLE_R(QtGui.QMainWindow):
         rect.moveCenter(pos)
         msgBox.setGeometry(rect)
         return msgBox
+    
+    def showCompletions(self):
+        pass
+    
+    def stack_viewer(self):
+        pass
+    
+    def start_debugger(self):
+        pass
     
     def undo(self):
         editor = self.tab_bar.currentWidget()
