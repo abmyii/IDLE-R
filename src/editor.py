@@ -24,6 +24,7 @@
 from PySide import QtCore, QtGui
 from src.highlighter import PygmentsHighlighter
 from src.extended import FindDialog, ReplaceDialog
+from src.completer import CodeAnalyser
 import random
 
 class LineArea(QtGui.QWidget):
@@ -73,6 +74,11 @@ class Editor(QtGui.QPlainTextEdit):
         font.setFixedPitch(True)
         font.setPointSize(10)
         self.setFont(font)
+        
+        # Code analyser
+        self.analyser = CodeAnalyser(self)
+        self.connect(self, QtCore.SIGNAL("textChanged()"),
+                    self.analyser.analyse)
         
         # Status bar
         self.statusBar = statusBar
