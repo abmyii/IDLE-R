@@ -36,15 +36,15 @@ class CodeAnalyser(QtCore.QObject):
          text)
          
         # Return the analysis info
-        print('Analysis took: {} s'.format(time.time() - start_time))
+        #print('Analysis took: {} s'.format(time.time() - start_time))
         #return comments, lambdas, variables, functions, imports, from_imports
         #print(comments, lambdas, variables, functions, imports, from_imports)
-        print('Comments: {}'.format(comments))
-        print('Lambdas: {}'.format(lambdas))
-        print('Variables: {}'.format(variables))
-        print('Functions: {}'.format(functions))
-        print('Imports: {}'.format(imports))
-        print('From-Imports: {}'.format(from_imports))
+        #print('Comments: {}'.format(comments))
+        #print('Lambdas: {}'.format(lambdas))
+        #print('Variables: {}'.format(variables))
+        #print('Functions: {}'.format(functions))
+        #print('Imports: {}'.format(imports))
+        #print('From-Imports: {}'.format(from_imports))
 
 class PythonCompleter(QtGui.QCompleter):
 	def __init__(self, editor, db=None):

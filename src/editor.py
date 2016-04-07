@@ -233,6 +233,26 @@ class Editor(QtGui.QPlainTextEdit):
         selection.cursor.clearSelection()
         self.setExtraSelections([selection])
     
+    def indent_region(self):
+        pos = self.textCursor().selectionStart()
+        cursor = self.textCursor()
+        if not cursor.hasSelection():
+            block = cursor.block().text().strip()
+            if block:
+                # The edit block in which we indent the current line
+                cursor.beginEditBlock()
+                cursor.movePosition(cursor.StartOfLine)
+                cursor.insertText(' ' * 4)
+                cursor.setPosition(pos + 4)
+                cursor.endEditBlock()
+        else:
+            end = self.textCursor().selectionEnd()
+            selection = cursor.selection().toPlainText().split('\n')
+            self.insertPlainText('\n'.join([' ' * 4 + s for s in selection]))
+            cursor.setPosition(pos + 4)
+            cursor.setPosition(end + 4 * len(selection), cursor.KeepAnchor)
+        self.setTextCursor(cursor)
+    
     def isInTemplate(self):
         find = self.toPlainText().find('<', self.templateStart)
         if find == -1:
@@ -271,11 +291,11 @@ class Editor(QtGui.QPlainTextEdit):
         # Handle backspaces
         if text == '\b':
             posInBlock = self.textCursor().positionInBlock()
-            txt = self.document().findBlock(pos).text()
+            txt = self.textCursor().block().text()
             dedent = 0
             if not txt.strip():
                 dedent = len(txt)
-            elif not txt[posInBlock-4:posInBlock].strip():
+            elif not txt[max(posInBlock-4, 0):posInBlock].strip():
                 dedent = 4
             if dedent:
                 for i in range(dedent):
@@ -496,9 +516,11 @@ class Editor(QtGui.QPlainTextEdit):
         self.setViewportMargins(self.lineAreaWidth(), 0, 0, 0)
     
     def updateStatusBar(self):
-        message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)
+        lines = self.toPlainText().count('\n') + 1
+        message = 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()
+        message += ' '
         parent = self.statusBar.parentWidget()
         if self.statusBar.widget:
             self.statusBar.removeWidget(self.statusBar.widget)

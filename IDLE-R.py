@@ -106,6 +106,15 @@ class IDLE_R(QtGui.QMainWindow):
         # Add menubar actions
         self.addMenuActions()
         
+        # Add tool
+        self.tool_bar = QtGui.QToolBar()
+        self.tool_bar.setMovable(False)
+        self.tool_bar.addAction('')
+        self.addToolBar(QtCore.Qt.TopToolBarArea, self.tool_bar)
+        
+        # Add menubar actions
+        self.addMenuActions()
+        
         # Status bar
         self.statusBar = StatusBar()
         self.setStatusBar(self.statusBar)
@@ -237,6 +246,27 @@ class IDLE_R(QtGui.QMainWindow):
         action = self.newAction("Show Completions", self.showCompletions, "Ctrl+Space")
         editMenu.addAction(action)
         
+        ## Add the "Format" menu ##
+        formatMenu = self.menu_bar.addMenu("F{}ormat".format(pre))
+        action = self.newAction("Indent Region", self.indent_region, 'Ctrl+]')
+        formatMenu.addAction(action)
+        action = self.newAction("Dedent Region", self.dedent_region, 'Ctrl+[')
+        formatMenu.addAction(action)
+        action = self.newAction("Comment Out Region", self.comment_out_region, 'Alt+3')
+        formatMenu.addAction(action)
+        action = self.newAction("Uncomment Region", self.uncomment_region, 'Alt+4')
+        formatMenu.addAction(action)
+        action = self.newAction("Tabify Region", self.tabify_region, 'Alt+5')
+        formatMenu.addAction(action)
+        action = self.newAction("Untabify Region", self.untabify_region, 'Alt+6')
+        formatMenu.addAction(action)
+        
+        formatMenu.addSeparator()
+        
+        # More format actions
+        action = self.newAction("Strip trailing whitespace", self.strip_wspace)
+        formatMenu.addAction(action)
+        
         ## Add the "Debug" menu ##
         debugMenu = self.menu_bar.addMenu(pre + "Debug")
         action = self.newAction("Debugger", self.start_debugger)
@@ -305,10 +335,10 @@ class IDLE_R(QtGui.QMainWindow):
         for index in range(self.tab_bar.count(), -1, -1):
             self.closeTab(index)
     
-    def comps(self):
+    def comment_out_region(self):
         editor = self.tab_bar.currentWidget()
         if editor:
-            editor.autocomplete()
+            editor.comment_out_region()
 
     def copy(self):
         editor = self.tab_bar.currentWidget()
@@ -319,6 +349,11 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.cut()
+    
+    def dedent_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.dedent_region()
     
     def deleteWorkspace(self, action):
         home = os.path.expanduser('~') + os.path.sep
@@ -375,10 +410,10 @@ class IDLE_R(QtGui.QMainWindow):
         if editor:
             editor.goto_line()
     
-    def goto_file_line(self):
+    def indent_region(self):
         editor = self.tab_bar.currentWidget()
         if editor:
-            editor.goto_line()
+            editor.indent_region()
     
     def keyPressEvent(self, event):
         if event.key() == 16777251:
@@ -668,6 +703,21 @@ class IDLE_R(QtGui.QMainWindow):
     def start_debugger(self):
         pass
     
+    def strip_wspace(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.strip_whitespace()
+    
+    def tabify_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.tabify_region()
+    
+    def uncomment_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.uncomment_region()
+            
     def undo(self):
         editor = self.tab_bar.currentWidget()
         if editor:
@@ -684,6 +734,11 @@ class IDLE_R(QtGui.QMainWindow):
                     self.tab_bar.setTabText(index, '* ' + name)
             else:
                 self.tab_bar.setTabText(index, name.replace('* ', ''))
+    
+    def untabify_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.untabify_region()
     
     def writeRecentFile(self, filename):
         """Write the recent files"""
