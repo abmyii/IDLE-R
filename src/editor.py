@@ -233,25 +233,98 @@ class Editor(QtGui.QPlainTextEdit):
         selection.cursor.clearSelection()
         self.setExtraSelections([selection])
     
-    def indent_region(self):
-        pos = self.textCursor().selectionStart()
+    def dent_region(self, dent):
+        # Load required variables
+        pos = self.textCursor().position()
         cursor = self.textCursor()
+        
+        # Start edit block
+        cursor.beginEditBlock()
+        
+        # One-line dent
         if not cursor.hasSelection():
-            block = cursor.block().text().strip()
-            if block:
-                # The edit block in which we indent the current line
-                cursor.beginEditBlock()
-                cursor.movePosition(cursor.StartOfLine)
+            # Move position and run operation
+            cursor.movePosition(cursor.StartOfLine)
+            
+            # Apply the relevant action on the text
+            if dent == 'in':
+                # Add 4 spaces (equiv. to a tab)
                 cursor.insertText(' ' * 4)
-                cursor.setPosition(pos + 4)
-                cursor.endEditBlock()
-        else:
-            end = self.textCursor().selectionEnd()
-            selection = cursor.selection().toPlainText().split('\n')
-            self.insertPlainText('\n'.join([' ' * 4 + s for s in selection]))
-            cursor.setPosition(pos + 4)
-            cursor.setPosition(end + 4 * len(selection), cursor.KeepAnchor)
+                add = 4
+            else:
+                # Strip first <= 4 spaces from block
+                text = cursor.block().text()
+                if not text[:4].strip():
+                    dedent = 4
+                else:
+                    dedent = len(text) - len(text.strip())
+                add = -dedent
+                cursor.movePosition(cursor.EndOfLine, cursor.KeepAnchor)
+                cursor.insertText(text[dedent:])
+            
+            # Reset cursor state
+            cursor.setPosition(pos + add)
+            
+        else:  # Multi-line dent
+            # Get selection positions
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+            selection = cursor.selection().toPlainText()
+            
+            # Move to appropriate position for operation
+            cursor.setPosition(start)
+            
+            # Iterate through all of the lines in the selection
+            sub = 0
+            for pos, line in enumerate(selection.split('\n')):
+                if dent == 'in':
+                    # Add 4 spaces to the begining of the line
+                    cursor.movePosition(cursor.StartOfLine)
+                    cursor.insertText(' ' * 4)
+                    add = 4
+                else:
+                    # Remove 4 (or less if there aren't that many) spaces
+                    text = cursor.block().text()
+                    if not text[:4].strip():
+                        dedent = 4
+                    else:
+                        dedent = len(text) - len(text.strip())
+                    
+                    # Set variables that are needed for resetting cursor pos
+                    if pos == 0:
+                        add = -dedent
+                    sub += dedent
+                    
+                    # Move position
+                    cursor.movePosition(cursor.StartOfLine)
+                    cursor.movePosition(cursor.EndOfLine, cursor.KeepAnchor)
+                    
+                    # Change the text
+                    cursor.insertText(text[dedent:])
+                
+                # Move one line down if needed
+                if pos != len(selection.split('\n')) - 1:
+                    cursor.movePosition(cursor.Down)
+            
+            # Reset to original position
+            length = len(selection.split('\n'))
+            cursor.setPosition(start + add)
+            if dent == 'in':
+                cursor.setPosition(end + add * length, cursor.KeepAnchor)
+            else:
+                cursor.setPosition(end - sub, cursor.KeepAnchor)
+            
+        # End edit block
+        cursor.endEditBlock()
+        
+        # Reset our cursor
         self.setTextCursor(cursor)
+    
+    def indent_region(self):
+        self.dent_region('in')
+    
+    def dedent_region(self):
+        self.dent_region('de')
     
     def isInTemplate(self):
         find = self.toPlainText().find('<', self.templateStart)
@@ -294,7 +367,7 @@ class Editor(QtGui.QPlainTextEdit):
             txt = self.textCursor().block().text()
             dedent = 0
             if not txt.strip():
-                dedent = len(txt)
+                dedent = min(posInBlock % 4 or 4, len(txt))
             elif not txt[max(posInBlock-4, 0):posInBlock].strip():
                 dedent = 4
             if dedent:
