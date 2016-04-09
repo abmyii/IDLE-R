@@ -24,6 +24,7 @@
 from PySide import QtCore, QtGui
 from src.highlighter import PygmentsHighlighter
 from src.extended import FindDialog, ReplaceDialog
+from src.completer import CodeAnalyser
 import random
 
 class LineArea(QtGui.QWidget):
@@ -73,6 +74,11 @@ class Editor(QtGui.QPlainTextEdit):
         font.setFixedPitch(True)
         font.setPointSize(10)
         self.setFont(font)
+        
+        # Code analyser
+        self.analyser = CodeAnalyser(self)
+        self.connect(self, QtCore.SIGNAL("textChanged()"),
+                    self.analyser.analyse)
         
         # Status bar
         self.statusBar = statusBar
@@ -227,6 +233,99 @@ class Editor(QtGui.QPlainTextEdit):
         selection.cursor.clearSelection()
         self.setExtraSelections([selection])
     
+    def dent_region(self, dent):
+        # Load required variables
+        pos = self.textCursor().position()
+        cursor = self.textCursor()
+        
+        # Start edit block
+        cursor.beginEditBlock()
+        
+        # One-line dent
+        if not cursor.hasSelection():
+            # Move position and run operation
+            cursor.movePosition(cursor.StartOfLine)
+            
+            # Apply the relevant action on the text
+            if dent == 'in':
+                # Add 4 spaces (equiv. to a tab)
+                cursor.insertText(' ' * 4)
+                add = 4
+            else:
+                # Strip first <= 4 spaces from block
+                text = cursor.block().text()
+                if not text[:4].strip():
+                    dedent = 4
+                else:
+                    dedent = len(text) - len(text.strip())
+                add = -dedent
+                cursor.movePosition(cursor.EndOfLine, cursor.KeepAnchor)
+                cursor.insertText(text[dedent:])
+            
+            # Reset cursor state
+            cursor.setPosition(pos + add)
+            
+        else:  # Multi-line dent
+            # Get selection positions
+            start = cursor.selectionStart()
+            end = cursor.selectionEnd()
+            selection = cursor.selection().toPlainText()
+            
+            # Move to appropriate position for operation
+            cursor.setPosition(start)
+            
+            # Iterate through all of the lines in the selection
+            sub = 0
+            for pos, line in enumerate(selection.split('\n')):
+                if dent == 'in':
+                    # Add 4 spaces to the begining of the line
+                    cursor.movePosition(cursor.StartOfLine)
+                    cursor.insertText(' ' * 4)
+                    add = 4
+                else:
+                    # Remove 4 (or less if there aren't that many) spaces
+                    text = cursor.block().text()
+                    if not text[:4].strip():
+                        dedent = 4
+                    else:
+                        dedent = len(text) - len(text.strip())
+                    
+                    # Set variables that are needed for resetting cursor pos
+                    if pos == 0:
+                        add = -dedent
+                    sub += dedent
+                    
+                    # Move position
+                    cursor.movePosition(cursor.StartOfLine)
+                    cursor.movePosition(cursor.EndOfLine, cursor.KeepAnchor)
+                    
+                    # Change the text
+                    cursor.insertText(text[dedent:])
+                
+                # Move one line down if needed
+                if pos != len(selection.split('\n')) - 1:
+                    cursor.movePosition(cursor.Down)
+            
+            # Reset to original position
+            length = len(selection.split('\n'))
+            cursor.setPosition(start + add)
+            if dent == 'in':
+                cursor.setPosition(end + add * length, cursor.KeepAnchor)
+            else:
+                cursor.setPosition(end - sub, cursor.KeepAnchor)
+            
+        # End edit block
+        cursor.endEditBlock()
+        
+        # Reset our cursor
+        self.setTextCursor(cursor)
+    
+    def indent_region(self):
+        self.dent_region('in')
+    
+    def dedent_region(self):
+        self.dent_region('de')
+    
     def isInTemplate(self):
         find = self.toPlainText().find('<', self.templateStart)
         if find == -1:
@@ -265,11 +364,11 @@ class Editor(QtGui.QPlainTextEdit):
         # Handle backspaces
         if text == '\b':
             posInBlock = self.textCursor().positionInBlock()
-            txt = self.document().findBlock(pos).text()
+            txt = self.textCursor().block().text()
             dedent = 0
             if not txt.strip():
-                dedent = len(txt)
-            elif not txt[posInBlock-4:posInBlock].strip():
+                dedent = min(posInBlock % 4 or 4, len(txt))
+            elif not txt[max(posInBlock-4, 0):posInBlock].strip():
                 dedent = 4
             if dedent:
                 for i in range(dedent):
@@ -490,9 +589,11 @@ class Editor(QtGui.QPlainTextEdit):
         self.setViewportMargins(self.lineAreaWidth(), 0, 0, 0)
     
     def updateStatusBar(self):
-        message = 'Ln: %s' % (self.textCursor().blockNumber() + 1)
+        lines = self.toPlainText().count('\n') + 1
+        message = 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()
+        message += ' '
         parent = self.statusBar.parentWidget()
         if self.statusBar.widget:
             self.statusBar.removeWidget(self.statusBar.widget)

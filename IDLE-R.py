@@ -56,6 +56,37 @@ def make_settings():
     if not os.path.isfile(home + '.idle-r/recent_files'):
         with open_file(home + '.idle-r/recent_files', 'w') as rfile: pass
 
+class AboutIDLE_R(QtGui.QDialog):
+
+    def __init__(self, parent=None):
+        QtGui.QDialog.__init__(self, parent, QtCore.Qt.Dialog)
+        self.setWindowTitle("About IDLE-R")
+        self.setMaximumSize(QtCore.QSize(0, 0))
+
+        vbox = QtGui.QVBoxLayout(self)
+
+        #Create an icon for the Dialog
+        pixmap = QtGui.QPixmap('images/icon.png')
+        self.lblIcon = QtGui.QLabel()
+        self.lblIcon.setPixmap(pixmap)
+
+        hbox = QtGui.QHBoxLayout()
+        hbox.addWidget(self.lblIcon)
+
+        lblTitle = QtGui.QLabel(
+"<h1>IDLE-R</h1>\n<i>Intergrated Development Learning Environment Reimagined<i>"
+)
+        lblTitle.setTextFormat(QtCore.Qt.RichText)
+        lblTitle.setAlignment(QtCore.Qt.AlignLeft)
+        hbox.addWidget(lblTitle)
+        vbox.addLayout(hbox)
+        #Add description
+        vbox.addWidget(QtGui.QLabel("""
+IDLE-R (Intergrated Development Learning Environment Reimagined), is a
+clone of IDLE but with fixes to make it more user and learner friendly.
+"""
+))
+
 class IDLE_R(QtGui.QMainWindow):
     
     def __init__(self):
@@ -71,6 +102,15 @@ class IDLE_R(QtGui.QMainWindow):
         # Add menubar
         self.menu_bar = MenuBar()
         self.setMenuBar(self.menu_bar)
+        
+        # Add menubar actions
+        self.addMenuActions()
+        
+        # Add tool
+        self.tool_bar = QtGui.QToolBar()
+        self.tool_bar.setMovable(False)
+        self.tool_bar.addAction('')
+        self.addToolBar(QtCore.Qt.TopToolBarArea, self.tool_bar)
         
         # Add menubar actions
         self.addMenuActions()
@@ -203,8 +243,54 @@ class IDLE_R(QtGui.QMainWindow):
         editMenu.addAction(action)
         action = self.newAction("Go to Line", self.goto_line, "Alt+G")
         editMenu.addAction(action)
-        action = self.newAction("Show Completions", self.comps, "Ctrl+Space")
+        action = self.newAction("Show Completions", self.showCompletions, "Ctrl+Space")
         editMenu.addAction(action)
+        
+        ## Add the "Format" menu ##
+        formatMenu = self.menu_bar.addMenu("F{}ormat".format(pre))
+        action = self.newAction("Indent Region", self.indent_region, 'Ctrl+]')
+        formatMenu.addAction(action)
+        action = self.newAction("Dedent Region", self.dedent_region, 'Ctrl+[')
+        formatMenu.addAction(action)
+        action = self.newAction("Comment Out Region", self.comment_out_region, 'Alt+3')
+        formatMenu.addAction(action)
+        action = self.newAction("Uncomment Region", self.uncomment_region, 'Alt+4')
+        formatMenu.addAction(action)
+        action = self.newAction("Tabify Region", self.tabify_region, 'Alt+5')
+        formatMenu.addAction(action)
+        action = self.newAction("Untabify Region", self.untabify_region, 'Alt+6')
+        formatMenu.addAction(action)
+        
+        formatMenu.addSeparator()
+        
+        # More format actions
+        action = self.newAction("Strip trailing whitespace", self.strip_wspace)
+        formatMenu.addAction(action)
+        
+        ## Add the "Debug" menu ##
+        debugMenu = self.menu_bar.addMenu(pre + "Debug")
+        action = self.newAction("Debugger", self.start_debugger)
+        debugMenu.addAction(action)
+        action = self.newAction("Stack Viewer", self.stack_viewer)
+        debugMenu.addAction(action)
+        action = self.newAction("Auto-open Stack Viewer", self.auto_stack_view)
+        debugMenu.addAction(action)
+        
+        ## Add the "Help" menu ##
+        helpMenu = self.menu_bar.addMenu(pre + "Help")
+        action = self.newAction("About IDLE-R", self.about)
+        helpMenu.addAction(action)
+        action = self.newAction("About Qt", self.about_qt)
+        helpMenu.addAction(action)
+    
+    def about(self):
+        AboutIDLE_R(self).show()
+    
+    def about_qt(self):
+        QtGui.QMessageBox.aboutQt(self, 'About Qt')
+    
+    def auto_stack_view(self):
+        pass
     
     def closeEvent(self, QCloseEvent):
         edited = False
@@ -236,7 +322,7 @@ class IDLE_R(QtGui.QMainWindow):
             if ret == msgBox.Discard:
                 super(IDLE_R, self).close()
             else:
-                QCloseEvent.ignore()
+                QtGui.QCloseEvent.ignore()
         else:
             super(IDLE_R, self).close()
     
@@ -249,10 +335,10 @@ class IDLE_R(QtGui.QMainWindow):
         for index in range(self.tab_bar.count(), -1, -1):
             self.closeTab(index)
     
-    def comps(self):
+    def comment_out_region(self):
         editor = self.tab_bar.currentWidget()
         if editor:
-            editor.autocomplete()
+            editor.comment_out_region()
 
     def copy(self):
         editor = self.tab_bar.currentWidget()
@@ -263,6 +349,11 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.cut()
+    
+    def dedent_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.dedent_region()
     
     def deleteWorkspace(self, action):
         home = os.path.expanduser('~') + os.path.sep
@@ -318,6 +409,11 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.goto_line()
+    
+    def indent_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.indent_region()
     
     def keyPressEvent(self, event):
         if event.key() == 16777251:
@@ -585,8 +681,9 @@ class IDLE_R(QtGui.QMainWindow):
             editor.selectAll()
     
     def setAlt(self, value=0):
-        self.alt = value
-        self.addMenuActions()
+        if self.alt != value:
+            self.alt = value
+            self.addMenuActions()
         
     def setMsgBoxPos(self, msgBox):
         rect = msgBox.geometry()
@@ -597,6 +694,30 @@ class IDLE_R(QtGui.QMainWindow):
         msgBox.setGeometry(rect)
         return msgBox
     
+    def showCompletions(self):
+        pass
+    
+    def stack_viewer(self):
+        pass
+    
+    def start_debugger(self):
+        pass
+    
+    def strip_wspace(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.strip_whitespace()
+    
+    def tabify_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.tabify_region()
+    
+    def uncomment_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.uncomment_region()
+            
     def undo(self):
         editor = self.tab_bar.currentWidget()
         if editor:
@@ -613,6 +734,11 @@ class IDLE_R(QtGui.QMainWindow):
                     self.tab_bar.setTabText(index, '* ' + name)
             else:
                 self.tab_bar.setTabText(index, name.replace('* ', ''))
+    
+    def untabify_region(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.untabify_region()
     
     def writeRecentFile(self, filename):
         """Write the recent files"""
