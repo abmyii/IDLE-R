@@ -26,6 +26,8 @@ from src.highlighter import PygmentsHighlighter
 from src.extended import FindDialog, ReplaceDialog
 from src.completer import CodeAnalyser
 import random
+import re
+import os
 
 class LineArea(QtGui.QWidget):
     
@@ -80,6 +82,13 @@ class Editor(QtGui.QPlainTextEdit):
         self.connect(self, QtCore.SIGNAL("textChanged()"),
                     self.analyser.analyse)
         
+        # Completer
+        self.completer = QtGui.QCompleter(self)
+        self.completer.setModel(QtGui.QDirModel(self.completer))
+        self.completer.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        self.completer.setWidget(self)
+        self.connect(self.completer, QtCore.SIGNAL("activated(const QString&)"), self.complete)
+        
         # Status bar
         self.statusBar = statusBar
         
@@ -129,12 +138,52 @@ class Editor(QtGui.QPlainTextEdit):
     
     def autocomplete(self):
         # NOTES:
-        # If Ctrl+Space is pressed, open autocomplete
+        # If Ctrl+Space is pressed, open auto-complete
         # If Tab pressed and no word under cursor, pass (fix on keyPressEvent)
-        # If Tab pressed and word under cursor, open autocomplete (filter by word under cursor?)
+        # If Tab pressed and word under cursor, open auto-complete (filter by word under cursor?)
         # If double Tab (quick taps?) and word under cursor, just tab. (TWEAK!)
-        # If text under cursor >= 3 letters show
-        pass
+        
+        # Make a clone of the textCursor which we can work with
+        cursor = self.textCursor()
+        cursor.select(cursor.LineUnderCursor)
+        
+        # Get the word under the cursor
+        line = cursor.selectedText()
+        pos = self.textCursor().positionInBlock() - 1
+        if line and line[pos] != ' ':
+            # Set completer model to path if in string otherwise python/other
+            lineSplit = line.split(' ')
+            pos = line[:pos].count(' ')
+            path = lineSplit[pos]
+            
+            # If the path is not complete, join it with last item of the split
+            if not os.path.sep in path[:-1] and len(lineSplit) > 1:
+                path = lineSplit[wordAt - 1] + ' ' + path
+            
+            # Get rid of useless chars
+            path = re.findall("""([^"']+)""", path)[0]
+            
+            # Use the word under the cursor to start autocompletion
+            self.completer.setCompletionPrefix(path)
+            
+            # Don't complete if there is no need to
+            completion = self.completer.currentCompletion()
+            count = self.completer.completionCount()
+            if not count or (count == 1 and completion == path):
+                pass
+        else:
+            # Use no completion prefix
+            self.completer.setCompletionPrefix('')
+            
+        # Set the start index for completing
+        popup = self.completer.popup()
+        popup.setCurrentIndex(self.completer.completionModel().index(0,0))
+        
+        # Start completing
+        rect = self.cursorRect()
+        rect.setWidth(self.completer.popup().sizeHintForColumn(0)
+            + self.completer.popup().verticalScrollBar().sizeHint().width())
+        self.completer.complete(rect)
     
     def columnLinePaintEvent(self, event):
         if self.enableColumnLine:
@@ -146,6 +195,20 @@ class Editor(QtGui.QPlainTextEdit):
             color = QtGui.QColor("#22aa33")
             color.setAlpha(80)
             painter.fillRect(event.rect(), color)
+    
+    def complete(self, completion):
+        # Clone the cursor and find how much of the completion we need to add
+        cursor = self.textCursor()
+        extra = len(completion) - len(self.completer.completionPrefix())
+        
+        # Move the cursor to get rid of any selections
+        cursor.movePosition(cursor.Left)
+        cursor.movePosition(cursor.Right)
+        
+        # Move to the end of the word and add the rest of the completion
+        cursor.movePosition(cursor.EndOfWord)
+        cursor.insertText(completion[-extra:])
+        self.setTextCursor(cursor)
     
     def find(self, text='', pos=None, comp=False, states={}):
         # Check and get text if none was given
@@ -278,7 +341,7 @@ class Editor(QtGui.QPlainTextEdit):
             sub = 0
             for pos, line in enumerate(selection.split('\n')):
                 if dent == 'in':
-                    # Add 4 spaces to the begining of the line
+                    # Add 4 spaces to the beginning of the line
                     cursor.movePosition(cursor.StartOfLine)
                     cursor.insertText(' ' * 4)
                     add = 4
@@ -338,7 +401,7 @@ class Editor(QtGui.QPlainTextEdit):
         return self.document().isModified()
     
     def keyPressEvent(self, event):
-        """Handle keypress events"""
+        """Handle key-press events"""
         pos = self.textCursor().position()
         text = event.text()
         last = self.document().findBlock(pos).text().strip()
@@ -377,9 +440,11 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Insert spaces instead of tabs
         elif text == '\t':
-            self.textCursor().beginEditBlock()
-            self.insertPlainText('    ')
-            self.textCursor().endEditBlock()
+            if not self.textCursor().hasSelection():
+                self.autocomplete()
+            #self.textCursor().beginEditBlock()
+            #self.insertPlainText('    ')
+            #self.textCursor().endEditBlock()
             return
             
         elif text in ['\r', '\n']:
@@ -412,7 +477,7 @@ class Editor(QtGui.QPlainTextEdit):
                     # Add extra spaces if there is a \ at the end of the line
                     space += ' ' * 4
             
-            # Add last line's tabs to this line (keep indentaition)
+            # Add last line's tabs to this line (keep indentation)
             for char in self.document().findBlock(pos).text():
                 if not subtract:
                     if char != ' ':
@@ -464,7 +529,7 @@ class Editor(QtGui.QPlainTextEdit):
                     # We found the opposite brace, but for another open brace
                     level -= 1
                 else:
-                    # We found the opposite brace for the origional brace
+                    # We found the opposite brace for the original brace
                     newpos = pos - 1 - char[0] if close else pos + 1 + char[0]
                     position = (newpos, pos) if close else (pos, newpos)
                     if not highlight:

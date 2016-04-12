@@ -420,9 +420,12 @@ class IDLE_R(QtGui.QMainWindow):
             self.setAlt(self.alt ^ 1)
         super(IDLE_R, self).keyPressEvent(event)
     
-    def newAction(self, name, action, shortcut=None):
+    def newAction(self, name, action, icon=None, shortcut=None):
         """Make actions quickly"""
-        Action = QtGui.QAction(name, self)
+        if icon:
+            Action = QtGui.QAction(QtGui.QIcon(icon), name, self)
+        else:
+            Action = QtGui.QAction(name, self)
         Action.triggered.connect(action)
         if shortcut:
             Action.setShortcut(shortcut)
@@ -774,7 +777,6 @@ if __name__ == '__main__':
     make_settings()
     
     # Run the IDE
-    QtGui.QApplication.setStyle("plastique")
     app = QtGui.QApplication(sys.argv)
     with open('theme' + os.path.sep + 'style.qss') as stylesheet:
         app.setStyleSheet(stylesheet.read())

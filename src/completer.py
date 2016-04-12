@@ -23,7 +23,11 @@ class CodeAnalyser(QtCore.QObject):
         text = re.sub('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', '', text)
         
         # find variables
-        variables = re.findall('([a-zA-Z]\w*)\s*=\s*(.+)', text)
+        variables = re.findall('([a-zA-Z]\w*)\s*=', text)
+        
+        # get values of variables
+        strip = lambda string: string.strip().rstrip()
+        values = map(strip, re.findall('=\s*(.+)$', text))
         
         # find functions
         # change ([a-zA-Z_]\w*) to ([a-zA-Z]\w*) for s/dunder functions
@@ -31,20 +35,23 @@ class CodeAnalyser(QtCore.QObject):
         
         # find imports
         # NOTE: process imports?
+        # NOTE: Make work for <...>.<...> (from) imports
+        # NOTE: Make sure imports don't catch from-imports
         imports = re.findall('import\s+([a-zA-Z]\w*)', text)
         from_imports = re.findall('from\s+([a-zA-Z]\w*)\s+import\s+([a-zA-Z]\w*)',
          text)
          
         # Return the analysis info
-        #print('Analysis took: {} s'.format(time.time() - start_time))
-        #return comments, lambdas, variables, functions, imports, from_imports
-        #print(comments, lambdas, variables, functions, imports, from_imports)
-        #print('Comments: {}'.format(comments))
-        #print('Lambdas: {}'.format(lambdas))
-        #print('Variables: {}'.format(variables))
-        #print('Functions: {}'.format(functions))
-        #print('Imports: {}'.format(imports))
-        #print('From-Imports: {}'.format(from_imports))
+        print('Analysis took: {} s'.format(time.time() - start_time))
+        #return comments, lambdas, variables, values, functions, imports, from_imports
+        #print(comments, lambdas, variables, values, functions, imports, from_imports)
+        print('Comments: {}'.format(comments))
+        print('Lambdas: {}'.format(lambdas))
+        print('Variables: {}'.format(variables))
+        print('Values: {}'.format(values))
+        print('Functions: {}'.format(functions))
+        print('Imports: {}'.format(imports))
+        print('From-Imports: {}'.format(from_imports))
 
 class PythonCompleter(QtGui.QCompleter):
 	def __init__(self, editor, db=None):
