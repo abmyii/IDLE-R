@@ -158,7 +158,7 @@ class Editor(QtGui.QPlainTextEdit):
             
             # If the path is not complete, join it with last item of the split
             if not os.path.sep in path[:-1] and len(lineSplit) > 1:
-                path = lineSplit[wordAt - 1] + ' ' + path
+                path = lineSplit[pos - 1] + ' ' + path
             
             # Get rid of useless chars
             path = re.findall("""([^"']+)""", path)[0]
@@ -461,7 +461,12 @@ class Editor(QtGui.QPlainTextEdit):
                     if not self.matchBraces(char, char_pos, close):
                         ind_pos += 1
                     else:
-                        subtract -= 4
+                        # Check if the braces are in the same line
+                        findpos = self.matchBraces(char, char_pos, close)
+                        contains = self.textCursor().block().contains
+                        if contains(findpos[0]) + contains(findpos[1]) != 2:
+                            # If not, remove the indentation
+                            subtract -= 4
                 char_pos += 1
             if ind_pos:
                 space += ' ' * (4 * ind_pos)
@@ -471,20 +476,15 @@ class Editor(QtGui.QPlainTextEdit):
                 char = last[-1]
                 
                 if char == ':':
-                    space += '    '
+                    space += ' ' * 4
                     
                 if not hasBrace and char == '\\':
                     # Add extra spaces if there is a \ at the end of the line
                     space += ' ' * 4
             
             # Add last line's tabs to this line (keep indentation)
-            for char in self.document().findBlock(pos).text():
-                if not subtract:
-                    if char != ' ':
-                        break
-                    space += ' '
-                else:
-                    subtract += 1
+            line = self.document().findBlock(pos).text()
+            space += ' ' * (len(line) - len(line.strip()))
 
             # Dedent if last word is one of the block-ending words
             if last in ['break', 'continue', 'pass', 'yield']:
@@ -540,7 +540,7 @@ class Editor(QtGui.QPlainTextEdit):
                     self.setTextCursor(cursor)
                     if select:
                         self.selectedBraces = True
-                    return 1
+                    return position
             elif char[1] == brace:
                 # If there is another identical brace, increment level
                 level += 1

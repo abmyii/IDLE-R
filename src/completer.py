@@ -23,33 +23,31 @@ class CodeAnalyser(QtCore.QObject):
         text = re.sub('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', '', text)
         
         # find variables
-        variables = re.findall('([a-zA-Z]\w*)\s*=', text)
-        
-        # get values of variables
-        strip = lambda string: string.strip().rstrip()
-        values = map(strip, re.findall('=\s*(.+)$', text))
+        variables = re.findall('([a-zA-Z_]\w*)\s*=', text)
         
         # find functions
-        # change ([a-zA-Z_]\w*) to ([a-zA-Z]\w*) for s/dunder functions
-        functions = re.findall('def\s+([a-zA-Z_]\w*)\s*\((.*)\)\:', text)
+        functions = re.findall('def\s+([a-zA-Z_]\w*)\s*\((.*)\)', text)
+        
+        # find classes
+        classes = re.findall('class\s+([a-zA-Z_]\w*)\s*', text)
+        class_functions = re.findall('def\s+([_]\w*)\s*\((.*)\)', text)
         
         # find imports
-        # NOTE: process imports?
-        # NOTE: Make work for <...>.<...> (from) imports
-        # NOTE: Make sure imports don't catch from-imports
-        imports = re.findall('import\s+([a-zA-Z]\w*)', text)
-        from_imports = re.findall('from\s+([a-zA-Z]\w*)\s+import\s+([a-zA-Z]\w*)',
+        # NOTE: process (from)/imports?
+        imports = re.findall('import\s+([a-zA-Z\.][\w\.]*)', text)
+        from_imports = re.findall(
+         'from\s+([a-zA-Z\.][\w\.]*)\s+import\s+([a-zA-Z\.][\w\.]*)',
          text)
          
         # Return the analysis info
         print('Analysis took: {} s'.format(time.time() - start_time))
-        #return comments, lambdas, variables, values, functions, imports, from_imports
-        #print(comments, lambdas, variables, values, functions, imports, from_imports)
+        #return comments, lambdas, variables, classes, functions, imports, from_imports
+        #print(comments, lambdas, variables, classes, functions, imports, from_imports)
         print('Comments: {}'.format(comments))
         print('Lambdas: {}'.format(lambdas))
         print('Variables: {}'.format(variables))
-        print('Values: {}'.format(values))
         print('Functions: {}'.format(functions))
+        print('Classes: {}'.format(classes))
         print('Imports: {}'.format(imports))
         print('From-Imports: {}'.format(from_imports))
 

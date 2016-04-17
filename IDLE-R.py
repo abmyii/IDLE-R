@@ -420,7 +420,7 @@ class IDLE_R(QtGui.QMainWindow):
             self.setAlt(self.alt ^ 1)
         super(IDLE_R, self).keyPressEvent(event)
     
-    def newAction(self, name, action, icon=None, shortcut=None):
+    def newAction(self, name, action, shortcut=None, icon=None):
         """Make actions quickly"""
         if icon:
             Action = QtGui.QAction(QtGui.QIcon(icon), name, self)
