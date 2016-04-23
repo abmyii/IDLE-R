@@ -23,26 +23,31 @@ class CodeAnalyser(QtCore.QObject):
         text = re.sub('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', '', text)
         
         # find variables
-        variables = re.findall('([a-zA-Z_]\w*)\s*=', text)
+        # Find if there is a way to make re match with matched strings
+        variables = re.findall('([a-zA-Z_]\w*)\s*=\s*([^;\n]*)', text)
         
         # find functions
         functions = re.findall('def\s+([a-zA-Z_]\w*)\s*\((.*)\)', text)
         
         # find classes
+        # NOTE: Join with lower regexp?
         classes = re.findall('class\s+([a-zA-Z_]\w*)\s*', text)
+        # NOTE: Do we need this?
+        classes_parents = re.findall('class\s+[a-zA-Z_]\w*\s*\((.*)\)', text)
+        # NOTE: Merge with functions?
         class_functions = re.findall('def\s+([_]\w*)\s*\((.*)\)', text)
+        print classes, classes_parents, class_functions
+        print len(classes), len(classes_parents), len(class_functions)
         
         # find imports
-        # NOTE: process (from)/imports?
         imports = re.findall('import\s+([a-zA-Z\.][\w\.]*)', text)
         from_imports = re.findall(
          'from\s+([a-zA-Z\.][\w\.]*)\s+import\s+([a-zA-Z\.][\w\.]*)',
          text)
          
         # Return the analysis info
-        print('Analysis took: {} s'.format(time.time() - start_time))
         #return comments, lambdas, variables, classes, functions, imports, from_imports
-        #print(comments, lambdas, variables, classes, functions, imports, from_imports)
+        print('Analysis took: {} s'.format(time.time() - start_time))
         print('Comments: {}'.format(comments))
         print('Lambdas: {}'.format(lambdas))
         print('Variables: {}'.format(variables))

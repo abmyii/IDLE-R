@@ -698,7 +698,12 @@ class IDLE_R(QtGui.QMainWindow):
         return msgBox
     
     def showCompletions(self):
-        pass
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            # Start autocompleting if the cursor has no selection (so as to not
+            # overwrite the selection)
+            if not editor.textCursor().hasSelection():
+                editor.autocomplete()
     
     def stack_viewer(self):
         pass

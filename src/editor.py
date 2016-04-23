@@ -405,8 +405,8 @@ class Editor(QtGui.QPlainTextEdit):
         pos = self.textCursor().position()
         text = event.text()
         last = self.document().findBlock(pos).text().strip()
-        # Make where when there is an undo, don't undo tabs (spaces?) and words
         
+        # Controls while filling in templates
         if self.inTemplate:
             if text == '\t':
                 self.isInTemplate()
@@ -440,11 +440,9 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Insert spaces instead of tabs
         elif text == '\t':
-            if not self.textCursor().hasSelection():
-                self.autocomplete()
-            #self.textCursor().beginEditBlock()
-            #self.insertPlainText('    ')
-            #self.textCursor().endEditBlock()
+            self.textCursor().beginEditBlock()
+            self.insertPlainText('    ')
+            self.textCursor().endEditBlock()
             return
             
         elif text in ['\r', '\n']:
