@@ -225,8 +225,10 @@ class IDLE_R(QtGui.QMainWindow):
         editMenu.addAction(action)
         action = self.newAction("Copy", self.copy, "Ctrl+C")
         editMenu.addAction(action)
-        action = self.newAction("Paste", self.paste, "Ctrl+Shift+V")
-        self.addAction(action) # (< and ^) For unix user copying terminal
+        action = self.newAction("Paste Backwards", self.paste_reverse, "Ctrl+Alt+V")
+        editMenu.addAction(action) # (< and ^) Pastes words backwards
+        action = self.newAction("Paste - Terminal", self.paste, "Ctrl+Shift+V")
+        editMenu.addAction(action) # (< and ^) For unix user copying terminal
         action = self.newAction("Paste", self.paste, "Ctrl+V")
         editMenu.addAction(action)
         action = self.newAction("Select All", self.selectAll, "Ctrl+A")
@@ -525,6 +527,11 @@ class IDLE_R(QtGui.QMainWindow):
         editor = self.tab_bar.currentWidget()
         if editor:
             editor.paste()
+    
+    def paste_reverse(self):
+        editor = self.tab_bar.currentWidget()
+        if editor:
+            editor.paste_reverse()
     
     def readRecentFile(self):
         """Returns the recent files"""
