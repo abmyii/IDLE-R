@@ -2,12 +2,49 @@ from PySide import QtCore, QtGui
 import re
 import time
 
+def process_variables(variables):
+    # Processes the variables list and outputs a dict with the
+    # variable name as the key and value as the item
+    variables_dict = {}
+    for variable in variables:
+        if len(variable) == 2:
+            # Check if the variable's value is a chain assignment
+            value = variable[1]
+            names = []
+            if re.findall('([a-zA-Z_]\w*)\s*=\s*([^;\n]*)', value):
+                names += variable[0]
+                # If so, keep looping until we get to the actual value
+                while True:
+                    find = re.findall('([a-zA-Z_]\w*)\s*=\s*([^;\n]*)', value)
+                    if find:
+                        # If the current item of the chain is a variable name
+                        # add it to the names list
+                        names += find[0][0]
+                        value = find[0][1]
+                    else:
+                        break
+                # Set all of the variable names in the names list to 'value'
+                variables_dict.update(dict.fromkeys(names, value))
+            else:
+                # Otherwise put the variable into the dict
+                variables_dict[variable[0]] = variable[1]
+    # If any variable is linked to another, set it's value to the others value
+    for variable in variables_dict.copy():
+        value = variables_dict[variable]
+        variables_dict[variable] = variables_dict.get(value, value)
+        # Remove empty variables (this will probably go when I fix the regex)
+        # problem below in the variables section
+        if not variables_dict[variable]:
+            variables_dict.pop(variable)
+    return variables_dict
+
 class CodeAnalyser(QtCore.QObject):
     
     def __init__(self, editor):
         self._editor = editor
     
     def analyse(self):
+        # Make all of the re's sets so that we don't get two identical matches
         start_time = time.time()
         
         text = self._editor.toPlainText()
@@ -23,21 +60,22 @@ class CodeAnalyser(QtCore.QObject):
         text = re.sub('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', '', text)
         
         # find variables
-        # Find if there is a way to make re match with matched strings
+        # work out how to catch variables that are blocked by the ([^;\n]*)
         variables = re.findall('([a-zA-Z_]\w*)\s*=\s*([^;\n]*)', text)
+        variables = process_variables(variables)
         
         # find functions
         functions = re.findall('def\s+([a-zA-Z_]\w*)\s*\((.*)\)', text)
         
         # find classes
-        # NOTE: Join with lower regexp?
-        classes = re.findall('class\s+([a-zA-Z_]\w*)\s*', text)
-        # NOTE: Do we need this?
-        classes_parents = re.findall('class\s+[a-zA-Z_]\w*\s*\((.*)\)', text)
-        # NOTE: Merge with functions?
+        classes = re.findall('class\s+([a-zA-Z_]\w*)\s*(\(.*\))*:', text)
+        classes = map(lambda m: [m[0], re.sub('[()]', '', m[1])], classes)
+        # NOTE: Make sure this gets ALL of the class functions and the above
+        #  functions re doesn't get the class ones (or at least knows that they
+        #  are from the class).
         class_functions = re.findall('def\s+([_]\w*)\s*\((.*)\)', text)
-        print classes, classes_parents, class_functions
-        print len(classes), len(classes_parents), len(class_functions)
+        print classes, class_functions
+        print len(classes), len(class_functions)
         
         # find imports
         imports = re.findall('import\s+([a-zA-Z\.][\w\.]*)', text)

@@ -95,10 +95,10 @@ class Editor(QtGui.QPlainTextEdit):
         # Syntax highlighting
         self.highlighter = PygmentsHighlighter(self)
         
-        # Highlighting current line
+        # Highlighting
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
-                    self.highlight_current_line)
-        self.highlight_current_line()
+                    self.highlight)
+        self.highlight()
         
         # Update status bar
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
@@ -285,6 +285,11 @@ class Editor(QtGui.QPlainTextEdit):
             for _ in range(line - 1):
                 self.moveCursor(QtGui.QTextCursor.Down)
     
+    def highlight(self):
+        objects = []
+        objects += [self.highlight_current_line()]
+        self.setExtraSelections(objects)
+    
     def highlight_current_line(self):
         selection = QtGui.QTextEdit.ExtraSelection()
         lineColor = QtGui.QColor("#858585")
@@ -294,7 +299,7 @@ class Editor(QtGui.QPlainTextEdit):
         selection.format.setProperty(QtGui.QTextFormat.FullWidthSelection, True)
         selection.cursor = self.textCursor()
         selection.cursor.clearSelection()
-        self.setExtraSelections([selection])
+        return selection
     
     def dent_region(self, dent):
         # Load required variables
@@ -582,6 +587,10 @@ class Editor(QtGui.QPlainTextEdit):
             return 4 + fm.width('9') * 4
         else:
             return 0
+    
+    def paste_reverse(self):
+        cb = QtGui.QApplication.clipboard().text()
+        self.insertPlainText(' '.join(cb.split(' ')[::-1]))
     
     def replace(self):
         states = {
