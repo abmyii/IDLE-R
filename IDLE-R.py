@@ -21,7 +21,7 @@
 #  MA 02110-1301, USA.
 #
 #
-import sys, os
+import sys, os, subprocess, re, time
 from PySide import QtCore, QtGui
 from datetime import date
 
@@ -119,20 +119,48 @@ class IDLE_R(QtGui.QMainWindow):
         self.statusBar = StatusBar()
         self.setStatusBar(self.statusBar)
         
-        # Add tab bar
-        self.tab_bar = TabBar(self)
-        self.tab_bar.setMovable(True)
+        options = 'gvim'
+        if options == 'gvim':
+            if os.path.isfile('.entered'):
+                os.remove('.entered')
+            gvim_container = QtGui.QX11EmbedContainer(self)
+            winId = str(gvim_container.winId())
+            if sys.platform in ['win32', 'cygwin']:
+                args = ['gvim.exe', '--winid', winId, '--cmd', '"source test.session"']
+            else:
+                args = ['gvim', '--socketid', winId, '--cmd', '"source test.session"']
+            # Terminate on close of IDLE-R
+            # On exit of gvim give focus back to IDLE-R
+            # Don't grab vim input (shortcut keys)
+            gvim_container.resize(1280, 1024)
+            gvim = os.system(' '.join(args))
+            while not os.path.isfile('.entered'):
+                time.sleep(0.1)
+            with open('.entered') as pidfile:
+                data = pidfile.read()
+                pid = int(data.split('\n')[0])
+                wid = data.split('\n')[1]
+            os.remove('.entered')
+            # Work out why gvim downsizes
+            time.sleep(1.5)
+            self.showMaximized()
+            gvim_container.setFocus()
+            self.setCentralWidget(gvim_container)
+        else:
+            # Add tab bar
+            self.tab_bar = TabBar(self)
+            self.tab_bar.setMovable(True)
+            
+            # Set tabs to be closable
+            self.tab_bar.tabCloseRequested.connect(self.closeTab)
+            self.tab_bar.currentChanged.connect(self.editorUpdateStatusBar)
+            self.tab_bar.setTabsClosable(True)
+            
+            # Set central widget
+            self.setCentralWidget(self.tab_bar)
         
-        # Set tabs to be closable
-        self.tab_bar.tabCloseRequested.connect(self.closeTab)
-        self.tab_bar.currentChanged.connect(self.editorUpdateStatusBar)
-        self.tab_bar.setTabsClosable(True)
-        
-        # Set central widget
-        self.setCentralWidget(self.tab_bar)
-        
-        # Start a new file
-        self.newFile()
+            # Start a new file
+            self.newFile()
     
     def addMenuActions(self):
         """Adds all of the actions to the menu bar"""
@@ -241,12 +269,21 @@ class IDLE_R(QtGui.QMainWindow):
         editMenu.addAction(action)
         action = self.newAction("Find Again", self.findAgain, "Ctrl+G")
         editMenu.addAction(action)
+        #action = self.newAction("Find Again Backwards", self.findAgainBW, "Shift+G")
+        #editMenu.addAction(action)
         action = self.newAction("Replace...", self.replace, "Ctrl+H")
         editMenu.addAction(action)
         action = self.newAction("Go to Line", self.goto_line, "Alt+G")
         editMenu.addAction(action)
         action = self.newAction("Show Completions", self.showCompletions, "Ctrl+Space")
         editMenu.addAction(action)
+        
+        editMenu.addSeparator()
+        #action = self.newAction("Use GVim", self.gvim, "Ctrl+Alt+G")
+        #editMenu.addAction(action)
+        
+        #action = self.newAction("Preferences", self.preferences, "Ctrl+Alt+P")
+        #editMenu.addAction(action)
         
         ## Add the "Format" menu ##
         formatMenu = self.menu_bar.addMenu("F{}ormat".format(pre))
@@ -296,10 +333,10 @@ class IDLE_R(QtGui.QMainWindow):
     
     def closeEvent(self, QCloseEvent):
         edited = False
-        for tab in range(self.tab_bar.count()):
+        """for tab in range(self.tab_bar.count()):
             if self.tab_bar.widget(tab).isModified():
                 edited = True
-                break
+                break"""
         
         if edited:
             msgBox = QtGui.QMessageBox(self)

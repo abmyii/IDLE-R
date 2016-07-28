@@ -28,6 +28,7 @@ from src.completer import CodeAnalyser
 import random
 import re
 import os
+#import call_tip_widget
 
 class LineArea(QtGui.QWidget):
     
@@ -411,6 +412,15 @@ class Editor(QtGui.QPlainTextEdit):
         text = event.text()
         last = self.document().findBlock(pos).text().strip()
         
+        # Show variable under cursor
+        z = self.textCursor()
+        z.select(z.WordUnderCursor)
+        variables = self.analyser.analyse()
+        #t = call_tip_widget.CallTipWidget(self)
+        #if variables.get(z.selectedText()):
+            #self.setToolTip(z.selectedText() + ': ' + variables[z.selectedText()])
+        #t.show_tip('hello')
+        
         # Controls while filling in templates
         if self.inTemplate:
             if text == '\t':
@@ -662,11 +672,13 @@ class Editor(QtGui.QPlainTextEdit):
     
     def updateStatusBar(self):
         lines = self.toPlainText().count('\n') + 1
-        message = 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)
+        message = ''
+        if self.textCursor().hasSelection():
+            text = self.toPlainText()
+            selection = self.textCursor().selectedText()
+            message += 'Count: ' + str(text.count(selection)) + ' '
+        message += 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()
         message += ' '
-        parent = self.statusBar.parentWidget()
-        if self.statusBar.widget:
-            self.statusBar.removeWidget(self.statusBar.widget)
-        self.statusBar.addPermanentWidget(QtGui.QLabel(message))
+        self.statusBar.showMessage(message)

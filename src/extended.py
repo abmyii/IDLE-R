@@ -34,11 +34,19 @@ class QAction(QtGui.QAction):
         self.triggered.connect(doAction)
 
 class StatusBar(QtGui.QStatusBar):
-    widget = None
+    widgets = []
+    
+    def addWidget(self, widget):
+        self.widgets.append(widget)
+        super(StatusBar, self).addWidget(widget)
     
     def addPermanentWidget(self, widget):
-        self.widget = widget
+        self.widgets.append(widget)
         super(StatusBar, self).addPermanentWidget(widget)
+    
+    def removeWidget(self, widget):
+        self.widgets.remove(widget)
+        super(StatusBar, self).removeWidget(widget)
 
 class FindDialog(QtGui.QDialog):
     

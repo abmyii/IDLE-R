@@ -1,4 +1,3 @@
-QWidget
-{
+QTabWidget {
     selection-background-color: #3d8ec9;
 }

@@ -61,6 +61,7 @@ class CodeAnalyser(QtCore.QObject):
         
         # find variables
         # work out how to catch variables that are blocked by the ([^;\n]*)
+        # (i.e variables defined on two lines or that has \ or ; in a string)
         variables = re.findall('([a-zA-Z_]\w*)\s*=\s*([^;\n]*)', text)
         variables = process_variables(variables)
         
@@ -74,8 +75,8 @@ class CodeAnalyser(QtCore.QObject):
         #  functions re doesn't get the class ones (or at least knows that they
         #  are from the class).
         class_functions = re.findall('def\s+([_]\w*)\s*\((.*)\)', text)
-        print classes, class_functions
-        print len(classes), len(class_functions)
+        #print classes, class_functions
+        #print len(classes), len(class_functions)
         
         # find imports
         imports = re.findall('import\s+([a-zA-Z\.][\w\.]*)', text)
@@ -84,15 +85,16 @@ class CodeAnalyser(QtCore.QObject):
          text)
          
         # Return the analysis info
+        #print('Analysis took: {} s'.format(time.time() - start_time))
+        #print('Comments: {}'.format(comments))
+        #print('Lambdas: {}'.format(lambdas))
+        #print('Variables: {}'.format(variables))
+        #print('Functions: {}'.format(functions))
+        #print('Classes: {}'.format(classes))
+        #print('Imports: {}'.format(imports))
+        #print('From-Imports: {}'.format(from_imports))
         #return comments, lambdas, variables, classes, functions, imports, from_imports
-        print('Analysis took: {} s'.format(time.time() - start_time))
-        print('Comments: {}'.format(comments))
-        print('Lambdas: {}'.format(lambdas))
-        print('Variables: {}'.format(variables))
-        print('Functions: {}'.format(functions))
-        print('Classes: {}'.format(classes))
-        print('Imports: {}'.format(imports))
-        print('From-Imports: {}'.format(from_imports))
+        return variables
 
 class PythonCompleter(QtGui.QCompleter):
 	def __init__(self, editor, db=None):
