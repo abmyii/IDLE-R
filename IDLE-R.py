@@ -119,7 +119,7 @@ class IDLE_R(QtGui.QMainWindow):
         self.statusBar = StatusBar()
         self.setStatusBar(self.statusBar)
         
-        options = 'gvim'
+        options = ''
         if options == 'gvim':
             if os.path.isfile('.entered'):
                 os.remove('.entered')

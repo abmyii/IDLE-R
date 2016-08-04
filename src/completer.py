@@ -96,6 +96,16 @@ class CodeAnalyser(QtCore.QObject):
         #return comments, lambdas, variables, classes, functions, imports, from_imports
         return variables
 
+class Autocompleter(dict):
+
+	def add_section(self, section):
+		self[section] = set()
+	
+	def autocomplete(self, section, word):
+		word = set(word)
+		return [completion for completion in section if word.issubset(completion.lower())]
+
+# DEFUNCT: Replaced by Autocompleter
 class PythonCompleter(QtGui.QCompleter):
 	def __init__(self, editor, db=None):
 		# make the wordlist

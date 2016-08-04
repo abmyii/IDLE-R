@@ -104,6 +104,8 @@ class Editor(QtGui.QPlainTextEdit):
         # Update status bar
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.updateStatusBar)
+        self.connect(self, QtCore.SIGNAL("selectionChanged()"),
+                    self.updateStatusBar)
         self.updateStatusBar()
         
         # Remove frame and set line wrap mode
@@ -155,36 +157,43 @@ class Editor(QtGui.QPlainTextEdit):
             # Set completer model to path if in string otherwise python/other
             lineSplit = line.split(' ')
             pos = line[:pos].count(' ')
-            path = lineSplit[pos]
+            complete = lineSplit[pos]
+            if complete.startswith('/'):
+                # Path completion
+                path = lineSplit[pos]
+                
+                # If the path is not complete, join it with last item of the split
+                if not os.path.sep in path[:-1] and len(lineSplit) > 1:
+                    path = lineSplit[pos - 1] + ' ' + path
+                
+                # Get rid of useless chars
+                path = re.findall("""([^"']+)""", path)[0]
+                
+                # Use the word under the cursor to start autocompletion
+                self.completer.setCompletionPrefix(path)
+                
+                # Don't complete if there is no need to
+                completion = self.completer.currentCompletion()
+                count = self.completer.completionCount()
+                if not count or (count == 1 and completion == path):
+                    pass
+                else:
+                    # Use no completion prefix
+                    self.completer.setCompletionPrefix('')
+            else:
+                # Code completion
+                print complete
+                self.completer.setCompletionPrefix('')
             
-            # If the path is not complete, join it with last item of the split
-            if not os.path.sep in path[:-1] and len(lineSplit) > 1:
-                path = lineSplit[pos - 1] + ' ' + path
+            # Set the start index for completing
+            popup = self.completer.popup()
+            popup.setCurrentIndex(self.completer.completionModel().index(0,0))
             
-            # Get rid of useless chars
-            path = re.findall("""([^"']+)""", path)[0]
-            
-            # Use the word under the cursor to start autocompletion
-            self.completer.setCompletionPrefix(path)
-            
-            # Don't complete if there is no need to
-            completion = self.completer.currentCompletion()
-            count = self.completer.completionCount()
-            if not count or (count == 1 and completion == path):
-                pass
-        else:
-            # Use no completion prefix
-            self.completer.setCompletionPrefix('')
-            
-        # Set the start index for completing
-        popup = self.completer.popup()
-        popup.setCurrentIndex(self.completer.completionModel().index(0,0))
-        
-        # Start completing
-        rect = self.cursorRect()
-        rect.setWidth(self.completer.popup().sizeHintForColumn(0)
-            + self.completer.popup().verticalScrollBar().sizeHint().width())
-        self.completer.complete(rect)
+            # Start completing
+            rect = self.cursorRect()
+            rect.setWidth(self.completer.popup().sizeHintForColumn(0)
+                + self.completer.popup().verticalScrollBar().sizeHint().width())
+            self.completer.complete(rect)
     
     def columnLinePaintEvent(self, event):
         if self.enableColumnLine:
@@ -676,7 +685,7 @@ class Editor(QtGui.QPlainTextEdit):
         if self.textCursor().hasSelection():
             text = self.toPlainText()
             selection = self.textCursor().selectedText()
-            message += 'Count: ' + str(text.count(selection)) + ' '
+            message += 'Selected Text Count: ' + str(text.count(selection)) + ' '
         message += 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()
