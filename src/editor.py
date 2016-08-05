@@ -153,47 +153,44 @@ class Editor(QtGui.QPlainTextEdit):
         # Get the word under the cursor
         line = cursor.selectedText()
         pos = self.textCursor().positionInBlock() - 1
-        if line and line[pos] != ' ':
+        
+        # Make sure that the lines has text and the text at pos isn't blank
+        if line and line[pos].strip():
             # Set completer model to path if in string otherwise python/other
             lineSplit = line.split(' ')
             pos = line[:pos].count(' ')
             complete = lineSplit[pos]
-            if complete.startswith('/'):
-                # Path completion
-                path = lineSplit[pos]
-                
+            
+            if complete.startswith(os.sep):
+                print complete, os.sep
+                # A Path
                 # If the path is not complete, join it with last item of the split
-                if not os.path.sep in path[:-1] and len(lineSplit) > 1:
-                    path = lineSplit[pos - 1] + ' ' + path
+                #if not os.sep in complete[-1] and len(lineSplit):
+                #complete = lineSplit[pos - 1] + ' ' + complete
+                print complete
                 
                 # Get rid of useless chars
-                path = re.findall("""([^"']+)""", path)[0]
+                complete = re.findall("""([^"']+)""", complete)[0]
+                print [complete]
                 
                 # Use the word under the cursor to start autocompletion
-                self.completer.setCompletionPrefix(path)
-                
-                # Don't complete if there is no need to
-                completion = self.completer.currentCompletion()
-                count = self.completer.completionCount()
-                if not count or (count == 1 and completion == path):
-                    pass
-                else:
-                    # Use no completion prefix
-                    self.completer.setCompletionPrefix('')
+                self.completer.setCompletionPrefix(complete)
             else:
-                # Code completion
-                print complete
-                self.completer.setCompletionPrefix('')
+                # Autocomplete for Python
+                return
+        else:
+            # Autocomplete Python with no prefix
+            return
             
-            # Set the start index for completing
-            popup = self.completer.popup()
-            popup.setCurrentIndex(self.completer.completionModel().index(0,0))
-            
-            # Start completing
-            rect = self.cursorRect()
-            rect.setWidth(self.completer.popup().sizeHintForColumn(0)
-                + self.completer.popup().verticalScrollBar().sizeHint().width())
-            self.completer.complete(rect)
+        # Set the start index for completing
+        popup = self.completer.popup()
+        popup.setCurrentIndex(self.completer.completionModel().index(0,0))
+        
+        # Start completing
+        rect = self.cursorRect()
+        rect.setWidth(self.completer.popup().sizeHintForColumn(0)
+            + self.completer.popup().verticalScrollBar().sizeHint().width())
+        self.completer.complete(rect)
     
     def columnLinePaintEvent(self, event):
         if self.enableColumnLine:
@@ -207,17 +204,11 @@ class Editor(QtGui.QPlainTextEdit):
             painter.fillRect(event.rect(), color)
     
     def complete(self, completion):
-        # Clone the cursor and find how much of the completion we need to add
+        # Clone the cursor
         cursor = self.textCursor()
-        extra = len(completion) - len(self.completer.completionPrefix())
         
-        # Move the cursor to get rid of any selections
-        cursor.movePosition(cursor.Left)
-        cursor.movePosition(cursor.Right)
-        
-        # Move to the end of the word and add the rest of the completion
-        cursor.movePosition(cursor.EndOfWord)
-        cursor.insertText(completion[-extra:])
+        # Move position and insert completion
+        cursor.insertText(completion)
         self.setTextCursor(cursor)
     
     def find(self, text='', pos=None, comp=False, states={}):

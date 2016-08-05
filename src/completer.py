@@ -101,11 +101,13 @@ class Autocompleter(dict):
 	def add_section(self, section):
 		self[section] = set()
 	
-	def autocomplete(self, section, word):
-		word = set(word)
-		return [completion for completion in section if word.issubset(completion.lower())]
+	def autocomplete(self, section, text):
+        # Use __dict__ attr of ANY object (add that special variable to AC)
+		text = set(text)
+		return [comp for comp in self[section] if text.issubset(comp.lower())]
 
 # DEFUNCT: Replaced by Autocompleter
+# OR: Use with autocompleter as frontend to display matches
 class PythonCompleter(QtGui.QCompleter):
 	def __init__(self, editor, db=None):
 		# make the wordlist
