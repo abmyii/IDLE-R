@@ -161,17 +161,22 @@ class Editor(QtGui.QPlainTextEdit):
             pos = line[:pos].count(' ')
             complete = lineSplit[pos]
             
-            if complete.startswith(os.sep):
-                print complete, os.sep
-                # A Path
-                # If the path is not complete, join it with last item of the split
-                #if not os.sep in complete[-1] and len(lineSplit):
-                #complete = lineSplit[pos - 1] + ' ' + complete
-                print complete
+            #print '0. ', [complete]
+            if complete.startswith(os.sep) or complete.endswith(os.sep): # A Path
+                # If the path is not complete, keep joining it with last item(s)
+                old = complete
+                while not os.path.exists(complete) and pos >= 0:
+                    complete = lineSplit[pos - 1] + ' ' + complete
+                    pos -= 1
+                    
+                # Still not complete, reset
+                if not os.path.exists(complete):
+                    complete = old
+                #print '1. ', [complete]
                 
                 # Get rid of useless chars
                 complete = re.findall("""([^"']+)""", complete)[0]
-                print [complete]
+                #print '2. ', [complete]
                 
                 # Use the word under the cursor to start autocompletion
                 self.completer.setCompletionPrefix(complete)
@@ -208,6 +213,9 @@ class Editor(QtGui.QPlainTextEdit):
         cursor = self.textCursor()
         
         # Move position and insert completion
+        cursor.movePosition(cursor.Left, cursor.KeepAnchor, len(self.completer.completionPrefix()))
+        if os.path.isdir(completion):
+            completion += os.path.sep
         cursor.insertText(completion)
         self.setTextCursor(cursor)
     
