@@ -214,3 +214,11 @@ class MenuBar(QtGui.QMenuBar):
     def focusOutEvent(self, event):
         self.parent().setAlt()
         super(MenuBar, self).focusOutEvent(event)
+
+def codeToolTip(widget, text):
+    rect = widget.cursorRect()
+    winpos = QtGui.QApplication.activeWindow().pos()
+    x = winpos.x()+50+(rect.width()*rect.x()/2)
+    y = winpos.y()+100+(rect.height()*rect.y()/16)
+    pos = QtCore.QPoint(x, y)
+    QtGui.QToolTip.showText(pos, text, widget, rect)

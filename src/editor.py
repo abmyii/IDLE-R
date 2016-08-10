@@ -23,7 +23,7 @@
 #  
 from PySide import QtCore, QtGui
 from src.highlighter import PygmentsHighlighter
-from src.extended import FindDialog, ReplaceDialog
+from src.extended import FindDialog, ReplaceDialog, codeToolTip
 from src.completer import CodeAnalyser, Completer
 import random
 import re
@@ -196,7 +196,7 @@ class Editor(QtGui.QPlainTextEdit):
             
             # Draw column line area
             painter = QtGui.QPainter(self.columnLine)
-            color = QtGui.QColor("#22aa33")
+            color = QtGui.QColor("#000000")
             color.setAlpha(80)
             painter.fillRect(event.rect(), color)
     
@@ -534,19 +534,13 @@ class Editor(QtGui.QPlainTextEdit):
         # Allow event to continue being processed if needed
         super(Editor, self).keyPressEvent(event)
         
-        # Show variable under cursor
+        # Show variable under cursor (do properly like in AC?)
         z = self.textCursor()
         z.select(z.WordUnderCursor)
         variables = self.analyser.analyse()
-        print z.selectedText(), variables
         if variables.get(z.selectedText()):
             text = z.selectedText() + ': ' + variables[z.selectedText()]
-            rect = self.cursorRect()
-            winpos = QtGui.QApplication.activeWindow().pos()
-            x = winpos.x()+50+(rect.width()*rect.x()/2)
-            y = winpos.y()+100+(rect.height()*rect.y()/16)
-            npos = QtCore.QPoint(x, y)
-            QtGui.QToolTip.showText(npos, text, self, rect)
+            codeToolTip(self, text)
             
         # No more selected braces
         if not self.textCursor().hasSelection() and self.selectedBraces:
@@ -586,7 +580,7 @@ class Editor(QtGui.QPlainTextEdit):
     def lineAreaPaintEvent(self, event):
         # Draw gutter area
         painter = QtGui.QPainter(self.lineArea)
-        painter.fillRect(event.rect(), QtGui.QColor('#C4C4C4'))
+        painter.fillRect(event.rect(), QtGui.QColor('#EEEEEE'))
 
         # Match editor font
         painter.setFont(self.font())
