@@ -24,7 +24,7 @@
 from PySide import QtCore, QtGui
 from src.highlighter import PygmentsHighlighter
 from src.extended import FindDialog, ReplaceDialog
-from src.completer import CodeAnalyser
+from src.completer import CodeAnalyser, Completer
 import random
 import re
 import os
@@ -83,12 +83,8 @@ class Editor(QtGui.QPlainTextEdit):
         self.connect(self, QtCore.SIGNAL("textChanged()"),
                     self.analyser.analyse)
         
-        # Completer
-        self.completer = QtGui.QCompleter(self)
-        self.completer.setModel(QtGui.QDirModel(self.completer))
-        self.completer.setCaseSensitivity(QtCore.Qt.CaseSensitive)
-        self.completer.setWidget(self)
-        self.connect(self.completer, QtCore.SIGNAL("activated(const QString&)"), self.complete)
+        # Path completer
+        self.completer = Completer(self)
         
         # Status bar
         self.statusBar = statusBar
@@ -155,29 +151,30 @@ class Editor(QtGui.QPlainTextEdit):
         pos = self.textCursor().positionInBlock() - 1
         
         # Make sure that the lines has text and the text at pos isn't blank
+        # Use QFilesystem instead of QDir
         if line and line[pos].strip():
             # Set completer model to path if in string otherwise python/other
             lineSplit = line.split(' ')
             pos = line[:pos].count(' ')
             complete = lineSplit[pos]
             
-            #print '0. ', [complete]
             if complete.startswith(os.sep) or complete.endswith(os.sep): # A Path
                 # If the path is not complete, keep joining it with last item(s)
                 old = complete
-                while not os.path.exists(complete) and pos >= 0:
+                while not os.path.exists(complete) and pos > 0:
                     complete = lineSplit[pos - 1] + ' ' + complete
                     pos -= 1
+                
+                # Get rid of useless chars
+                complete = complete.replace('"', '')
+                complete = complete.replace("'", '')
                     
                 # Still not complete, reset
                 if not os.path.exists(complete):
                     complete = old
-                #print '1. ', [complete]
-                
-                # Get rid of useless chars
-                complete = re.findall("""([^"']+)""", complete)[0]
-                #print '2. ', [complete]
-                
+                else:
+                    self.completer.setModel(QtGui.QDirModel())
+                    
                 # Use the word under the cursor to start autocompletion
                 self.completer.setCompletionPrefix(complete)
             else:
@@ -185,17 +182,12 @@ class Editor(QtGui.QPlainTextEdit):
                 return
         else:
             # Autocomplete Python with no prefix
-            return
+            # Use model with all python words and sorted
+            # new completer? put completer init in class for easy usage?
+            self.completer = Completer(self, ['hello'])
             
-        # Set the start index for completing
-        popup = self.completer.popup()
-        popup.setCurrentIndex(self.completer.completionModel().index(0,0))
-        
-        # Start completing
-        rect = self.cursorRect()
-        rect.setWidth(self.completer.popup().sizeHintForColumn(0)
-            + self.completer.popup().verticalScrollBar().sizeHint().width())
-        self.completer.complete(rect)
+        # Show completer
+        self.completer.showCompleter()
     
     def columnLinePaintEvent(self, event):
         if self.enableColumnLine:
@@ -208,12 +200,12 @@ class Editor(QtGui.QPlainTextEdit):
             color.setAlpha(80)
             painter.fillRect(event.rect(), color)
     
-    def complete(self, completion):
+    def complete(self, completion, prefix):
         # Clone the cursor
         cursor = self.textCursor()
         
         # Move position and insert completion
-        cursor.movePosition(cursor.Left, cursor.KeepAnchor, len(self.completer.completionPrefix()))
+        cursor.movePosition(cursor.Left, cursor.KeepAnchor, len(prefix))
         if os.path.isdir(completion):
             completion += os.path.sep
         cursor.insertText(completion)
@@ -424,10 +416,25 @@ class Editor(QtGui.QPlainTextEdit):
         z = self.textCursor()
         z.select(z.WordUnderCursor)
         variables = self.analyser.analyse()
-        #t = call_tip_widget.CallTipWidget(self)
         #if variables.get(z.selectedText()):
-            #self.setToolTip(z.selectedText() + ': ' + variables[z.selectedText()])
-        #t.show_tip('hello')
+            #self.setText(z.selectedText() + ': ' + variables[z.selectedText()])
+        rect = self.cursorRect()
+        print self.parentWidget().parentWidget().pos()
+        QtGui.QToolTip.showText(rect.adjusted(100, 200, 0, 0).topLeft(), 'hello', self, rect)
+        
+        # Control keypresses when completer is active
+        if self.completer.popup().isVisible():
+            # Enter, Return, Escape, Tab, Backtab
+            forbidden = [16777221, 16777220, 16777216, 16777217, 16777218]
+            # Use tab for autocompletion of first completion?
+            if not event.nativeModifiers() and event.key() in forbidden:
+                if event.key() in [16777221, 16777220]:
+                    self.completer.onActivated(self.completer.currentCompletion())
+                    self.completer.popup().hide()
+                return
+            else:
+                # Hide and continue
+                self.completer.popup().hide()
         
         # Controls while filling in templates
         if self.inTemplate:

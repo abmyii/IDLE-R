@@ -2,6 +2,36 @@ from PySide import QtCore, QtGui
 import re
 import time
 
+class Completer(QtGui.QCompleter):
+    
+    def __init__(self, parent, stringList=[]):
+        if stringList:
+            QtGui.QCompleter.__init__(self, stringList, parent)
+        else:
+            QtGui.QCompleter.__init__(self, parent)
+        
+        # Default setup
+        self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
+        self.setWidget(parent)
+        self.setCompletionMode(self.PopupCompletion)
+        self.connect(self, QtCore.SIGNAL("activated(const QString&)"), self.onActivated)
+    
+    def onActivated(self, completion):
+        self.parent().complete(completion, self.completionPrefix())
+    
+    def showCompleter(self):
+        # DONT AUTOCOMPLETE IF THERE IS ONLY ONE OPTION
+        # Set the start index for completing
+        popup = self.popup()
+        popup.setCurrentIndex(self.completionModel().index(0,0))
+        
+        # Start completing
+        rect = self.parent().cursorRect()
+        rect.setWidth(self.popup().sizeHintForColumn(0)
+            + self.popup().verticalScrollBar().sizeHint().width())
+        rect.moveLeft(rect.width()/1.5)
+        self.complete(rect)
+
 def process_variables(variables):
     # Processes the variables list and outputs a dict with the
     # variable name as the key and value as the item
@@ -103,6 +133,7 @@ class Autocompleter(dict):
 	
 	def autocomplete(self, section, text):
         # Use __dict__ attr of ANY object (add that special variable to AC)
+        # Or dir if there isn't any
 		text = set(text)
 		return [comp for comp in self[section] if text.issubset(comp.lower())]
 

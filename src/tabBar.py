@@ -33,16 +33,17 @@ class TabBar(QtGui.QTabWidget):
         button.setFlat(True)
         button.pressed.connect(parent.newFile)
         self.setCornerWidget(button)
+        
+        # Customise look
+        tB = QtGui.QTabBar
+        self.tabBar().setShape(tB.RoundedNorth)
     
     def closeTab(self, index, saveFile, setMsgBoxPos, mainwindow):
         """Called when closing tabs"""
-        old_index = self.currentIndex()
-        self.setCurrentIndex(index)
         editor = self.currentWidget()
         if editor:
             if not editor.document().isModified():
                 self.removeTab(index)
-                old_index -= 1
             else:
                 msgBox = QtGui.QMessageBox(mainwindow)
                 
@@ -66,21 +67,19 @@ class TabBar(QtGui.QTabWidget):
                 
                 # Process return code
                 if ret == msgBox.Discard or ret == msgBox.Save and saveFile():
-                    self.removeTab(self.currentIndex())
-                    
-            self.setCurrentIndex(old_index)
+                    self.removeTab(index)
     
-    def mousePressEvent(self, QMouseEvent):
+    def mousePressEvent(self, event):
         """
         Fix bug where MMB (Middle Mouse Button)
         inserts text into current widget.
         """
-        event = QMouseEvent
         if event.button().__int__() is 4:  # MMB
-            point = event.globalPos() - self.parentWidget().pos()
-            point -= QtCore.QPoint(0, 55)  # Space between win & tab bar
-            parent = self.parent()  # Shorter variable name
-            self.closeTab(self.tabBar().tabAt(point),
+            parent = self.parent()
+            point = event.globalPos() - parent.pos() - self.pos()
+            # Include statusbar size when finding position
+            point -= QtCore.QPoint(0, parent.statusBar.size().height())
+            if self.tabBar().tabAt(point) != -1:
+                self.closeTab(self.tabBar().tabAt(point),
                         parent.saveFile, parent.setMsgBoxPos, parent)
-        else:
-            super(TabBar, self).mousePressEvent(event)
+        super(TabBar, self).mousePressEvent(event)

@@ -491,9 +491,11 @@ class IDLE_R(QtGui.QMainWindow):
             editor.setPlainText(text)
             
             # Set cursor pos
-            cursor = QtGui.QTextCursor
-            for i in range(cpos):
-                editor.moveCursor(cursor.Right, cursor.MoveAnchor)
+            if cpos:
+                cursor = QtGui.QTextCursor
+                textCursor = editor.textCursor()
+                textCursor.movePosition(cursor.Right, n=cpos)
+                editor.setTextCursor(textCursor)
         
         # Add the tab
         if ow:
