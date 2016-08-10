@@ -290,6 +290,9 @@ class Editor(QtGui.QPlainTextEdit):
         objects = []
         objects += [self.highlight_current_line()]
         self.setExtraSelections(objects)
+        
+        # Remove tooltips (? always)
+        QtGui.QToolTip.hideText()
     
     def highlight_current_line(self):
         selection = QtGui.QTextEdit.ExtraSelection()
@@ -412,16 +415,6 @@ class Editor(QtGui.QPlainTextEdit):
         text = event.text()
         last = self.document().findBlock(pos).text().strip()
         
-        # Show variable under cursor
-        z = self.textCursor()
-        z.select(z.WordUnderCursor)
-        variables = self.analyser.analyse()
-        #if variables.get(z.selectedText()):
-            #self.setText(z.selectedText() + ': ' + variables[z.selectedText()])
-        rect = self.cursorRect()
-        print self.parentWidget().parentWidget().pos()
-        QtGui.QToolTip.showText(rect.adjusted(100, 200, 0, 0).topLeft(), 'hello', self, rect)
-        
         # Control keypresses when completer is active
         if self.completer.popup().isVisible():
             # Enter, Return, Escape, Tab, Backtab
@@ -538,8 +531,24 @@ class Editor(QtGui.QPlainTextEdit):
                 self.matchBraces(text, pos, True, highlight=True)
             return
         
+        # Allow event to continue being processed if needed
         super(Editor, self).keyPressEvent(event)
+        
+        # Show variable under cursor
+        z = self.textCursor()
+        z.select(z.WordUnderCursor)
+        variables = self.analyser.analyse()
+        print z.selectedText(), variables
+        if variables.get(z.selectedText()):
+            text = z.selectedText() + ': ' + variables[z.selectedText()]
+            rect = self.cursorRect()
+            winpos = QtGui.QApplication.activeWindow().pos()
+            x = winpos.x()+50+(rect.width()*rect.x()/2)
+            y = winpos.y()+100+(rect.height()*rect.y()/16)
+            npos = QtCore.QPoint(x, y)
+            QtGui.QToolTip.showText(npos, text, self, rect)
             
+        # No more selected braces
         if not self.textCursor().hasSelection() and self.selectedBraces:
             self.selectedBraces = 0
     
