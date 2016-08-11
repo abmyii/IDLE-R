@@ -82,50 +82,48 @@ class CodeAnalyser(QtCore.QObject):
         
         # find comments and then remove them for the text we are analysing
         # so we don't get code confused with comments
-        comments = re.findall('(#.*)', text)
+        self.comments = re.findall('(#.*)', text)
         text = re.sub('(#.*)', '', text)
         
         # find lambdas and then remove them so we don't get them
         # confused with variables
-        lambdas = re.findall('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', text)
+        self.lambdas = re.findall('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', text)
         text = re.sub('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', '', text)
         
         # find variables
         # work out how to catch variables that are blocked by the ([^;\n]*)
         # (i.e variables defined on two lines or that has \ or ; in a string)
         variables = re.findall('([a-zA-Z_]\w*)\s*=\s*([^;\n]*)', text)
-        variables = process_variables(variables)
+        self.variables = process_variables(variables)
         
         # find functions
-        functions = re.findall('def\s+([a-zA-Z_]\w*)\s*\((.*)\)', text)
+        self.functions = re.findall('def\s+([a-zA-Z_]\w*)\s*\((.*)\)', text)
         
         # find classes
         classes = re.findall('class\s+([a-zA-Z_]\w*)\s*(\(.*\))*:', text)
-        classes = map(lambda m: [m[0], re.sub('[()]', '', m[1])], classes)
+        self.classes = map(lambda m: [m[0], re.sub('[()]', '', m[1])], classes)
         # NOTE: Make sure this gets ALL of the class functions and the above
         #  functions re doesn't get the class ones (or at least knows that they
         #  are from the class).
-        class_functions = re.findall('def\s+([_]\w*)\s*\((.*)\)', text)
+        self.class_functions = re.findall('def\s+([_]\w*)\s*\((.*)\)', text)
         #print classes, class_functions
         #print len(classes), len(class_functions)
         
         # find imports
-        imports = re.findall('import\s+([a-zA-Z\.][\w\.]*)', text)
-        from_imports = re.findall(
+        self.imports = re.findall('import\s+([a-zA-Z\.][\w\.]*)', text)
+        self.from_imports = re.findall(
          'from\s+([a-zA-Z\.][\w\.]*)\s+import\s+([a-zA-Z\.][\w\.]*)',
          text)
          
-        # Return the analysis info
-        #print('Analysis took: {} s'.format(time.time() - start_time))
-        #print('Comments: {}'.format(comments))
-        #print('Lambdas: {}'.format(lambdas))
-        #print('Variables: {}'.format(variables))
-        #print('Functions: {}'.format(functions))
-        #print('Classes: {}'.format(classes))
-        #print('Imports: {}'.format(imports))
-        #print('From-Imports: {}'.format(from_imports))
-        #return comments, lambdas, variables, classes, functions, imports, from_imports
-        return variables
+        # Print the analysis info (debug)
+        print('Analysis took: {} s'.format(time.time() - start_time))
+        print('Comments: {}'.format(self.comments))
+        print('Lambdas: {}'.format(self.lambdas))
+        print('Variables: {}'.format(self.variables))
+        print('Functions: {}'.format(self.functions))
+        print('Classes: {}'.format(self.classes))
+        print('Imports: {}'.format(self.imports))
+        print('From-Imports: {}'.format(self.from_imports))
 
 class Autocompleter(dict):
 

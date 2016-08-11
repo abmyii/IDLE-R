@@ -24,7 +24,7 @@
 from PySide import QtCore, QtGui
 from src.highlighter import PygmentsHighlighter
 from src.extended import FindDialog, ReplaceDialog, codeToolTip
-from src.completer import CodeAnalyser, Completer
+from src.completer import CodeAnalyser, Completer, Autocompleter
 import random
 import re
 import os
@@ -83,8 +83,12 @@ class Editor(QtGui.QPlainTextEdit):
         self.connect(self, QtCore.SIGNAL("textChanged()"),
                     self.analyser.analyse)
         
-        # Path completer
+        # Completer and auto-completer
         self.completer = Completer(self)
+        self.autocompleter = Autocompleter()
+        self.codeAnalyser = CodeAnalyser(self)
+        self.connect(self, QtCore.SIGNAL("textChanged()"),
+                    self.codeAnalyser.analyse)
         
         # Status bar
         self.statusBar = statusBar
@@ -174,7 +178,7 @@ class Editor(QtGui.QPlainTextEdit):
             # Autocomplete Python with no prefix
             # Use model with all python words and sorted
             # new completer? put completer init in class for easy usage?
-            self.completer = Completer(self, ['hello'])
+            self.completer = Completer(self, ['hello', 'bye'])
             
         # Show completer
         self.completer.showCompleter()
@@ -543,9 +547,8 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Show variable under cursor (do properly like in AC?)
         variable = self.getWordUnderCursor()
-        variables = self.analyser.analyse()
-        if variable and variables.get(variable):
-            text = variable + ': ' + variables[variable]
+        if variable and self.codeAnalyser.variables.get(variable):
+            text = variable + ': ' + self.codeAnalyser.variables[variable]
             codeToolTip(self, text)
             
         # No more selected braces
