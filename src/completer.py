@@ -20,7 +20,7 @@ class Completer(QtGui.QCompleter):
         self.parent().complete(completion, self.completionPrefix())
     
     def showCompleter(self):
-        # DONT AUTOCOMPLETE IF THERE IS ONLY ONE OPTION
+        # DON'T COMPLETE IF THERE IS ONLY ONE OPTION (just pick first option)
         # Set the start index for completing
         popup = self.popup()
         popup.setCurrentIndex(self.completionModel().index(0,0))
@@ -29,7 +29,8 @@ class Completer(QtGui.QCompleter):
         rect = self.parent().cursorRect()
         rect.setWidth(self.popup().sizeHintForColumn(0)
             + self.popup().verticalScrollBar().sizeHint().width())
-        rect.moveLeft(rect.width()/1.5)
+        rect.moveTopLeft(self.parent().cursorRect().bottomRight())
+        rect.translate(34, -10)
         self.complete(rect)
 
 def process_variables(variables):

@@ -218,7 +218,7 @@ class MenuBar(QtGui.QMenuBar):
 def codeToolTip(widget, text):
     rect = widget.cursorRect()
     winpos = QtGui.QApplication.activeWindow().pos()
-    x = winpos.x()+50+(rect.width()*rect.x()/2)
+    x = winpos.x()+45+(rect.width()*rect.x()/2)
     y = winpos.y()+100+(rect.height()*rect.y()/16)
     pos = QtCore.QPoint(x, y)
     QtGui.QToolTip.showText(pos, text, widget, rect)

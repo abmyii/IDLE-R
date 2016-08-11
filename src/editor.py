@@ -142,22 +142,12 @@ class Editor(QtGui.QPlainTextEdit):
         # If Tab pressed and word under cursor, open auto-complete (filter by word under cursor?)
         # If double Tab (quick taps?) and word under cursor, just tab. (TWEAK!)
         
-        # Make a clone of the textCursor which we can work with
-        cursor = self.textCursor()
-        cursor.select(cursor.LineUnderCursor)
-        
         # Get the word under the cursor
-        line = cursor.selectedText()
-        pos = self.textCursor().positionInBlock() - 1
+        complete = self.getWordUnderCursor(True)
         
-        # Make sure that the lines has text and the text at pos isn't blank
-        # Use QFilesystem instead of QDir
-        if line and line[pos].strip():
-            # Set completer model to path if in string otherwise python/other
-            lineSplit = line.split(' ')
-            pos = line[:pos].count(' ')
-            complete = lineSplit[pos]
-            
+        # Start completion if there is a word under the cursor
+        if complete:
+            complete, pos = complete
             if complete.startswith(os.sep) or complete.endswith(os.sep): # A Path
                 # If the path is not complete, keep joining it with last item(s)
                 old = complete
@@ -278,6 +268,23 @@ class Editor(QtGui.QPlainTextEdit):
                     if comp: return False
                     self.find(text, 0, comp, states)
             elif comp: return False
+    
+    def getWordUnderCursor(self, position=False):
+        cursor = self.textCursor()
+        cursor.select(cursor.LineUnderCursor)
+        
+        # Get the word under the cursor
+        line = cursor.selectedText()
+        pos = self.textCursor().positionInBlock() - 1
+        
+        # Make sure that the lines has text and the text at pos isn't blank
+        if line and line[pos].strip():
+            lineSplit = line.split(' ')
+            pos = line[:pos].count(' ')
+            word = lineSplit[pos]
+            if position:
+                return word, pos
+            return word
     
     def goto_line(self):
         line, ok = QtGui.QInputDialog.getInt(self, "Goto", "Go to Line number:")
@@ -535,11 +542,10 @@ class Editor(QtGui.QPlainTextEdit):
         super(Editor, self).keyPressEvent(event)
         
         # Show variable under cursor (do properly like in AC?)
-        z = self.textCursor()
-        z.select(z.WordUnderCursor)
+        variable = self.getWordUnderCursor()
         variables = self.analyser.analyse()
-        if variables.get(z.selectedText()):
-            text = z.selectedText() + ': ' + variables[z.selectedText()]
+        if variable and variables.get(variable):
+            text = variable + ': ' + variables[variable]
             codeToolTip(self, text)
             
         # No more selected braces
