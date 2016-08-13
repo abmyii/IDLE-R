@@ -28,7 +28,6 @@ from src.completer import CodeAnalyser, Completer, Autocompleter
 import random
 import re
 import os
-#import call_tip_widget
 
 class LineArea(QtGui.QWidget):
     
@@ -67,6 +66,8 @@ class Editor(QtGui.QPlainTextEdit):
     hadSelection = False
     inTemplate = False
     templateStart = 0
+    # When last action was inserting a completion
+    completed = False
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
@@ -80,15 +81,10 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Code analyser
         self.analyser = CodeAnalyser(self)
-        self.connect(self, QtCore.SIGNAL("textChanged()"),
-                    self.analyser.analyse)
         
         # Completer and auto-completer
         self.completer = Completer(self)
         self.autocompleter = Autocompleter()
-        self.codeAnalyser = CodeAnalyser(self)
-        self.connect(self, QtCore.SIGNAL("textChanged()"),
-                    self.codeAnalyser.analyse)
         
         # Status bar
         self.statusBar = statusBar
@@ -97,8 +93,6 @@ class Editor(QtGui.QPlainTextEdit):
         self.highlighter = PygmentsHighlighter(self)
         
         # Highlighting
-        self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
-                    self.highlight)
         self.highlight()
         
         # Update status bar
@@ -173,7 +167,7 @@ class Editor(QtGui.QPlainTextEdit):
                 self.completer.setCompletionPrefix(complete)
             else:
                 # Autocomplete for Python
-                return
+                self.completer = Completer(self, ['testing'])
         else:
             # Autocomplete Python with no prefix
             # Use model with all python words and sorted
@@ -181,7 +175,8 @@ class Editor(QtGui.QPlainTextEdit):
             self.completer = Completer(self, ['hello', 'bye'])
             
         # Show completer
-        self.completer.showCompleter()
+        if self.completer.completionCount():
+            self.completer.showCompleter()
     
     def columnLinePaintEvent(self, event):
         if self.enableColumnLine:
@@ -204,6 +199,7 @@ class Editor(QtGui.QPlainTextEdit):
             completion += os.path.sep
         cursor.insertText(completion)
         self.setTextCursor(cursor)
+        self.completed = True
     
     def find(self, text='', pos=None, comp=False, states={}):
         # Check and get text if none was given
@@ -425,14 +421,19 @@ class Editor(QtGui.QPlainTextEdit):
         pos = self.textCursor().position()
         text = event.text()
         last = self.document().findBlock(pos).text().strip()
+        completer_isVisible = self.completer.popup().isVisible()
+        
+        # Last action was not inserting a completion
+        completed = self.completed
+        if self.completed:
+            self.completed = False
         
         # Control keypresses when completer is active
         if self.completer.popup().isVisible():
             # Enter, Return, Escape, Tab, Backtab
             forbidden = [16777221, 16777220, 16777216, 16777217, 16777218]
-            # Use tab for autocompletion of first completion?
             if not event.nativeModifiers() and event.key() in forbidden:
-                if event.key() in [16777221, 16777220]:
+                if event.key() in [16777221, 16777220, 16777217]:
                     self.completer.onActivated(self.completer.currentCompletion())
                     self.completer.popup().hide()
                 return
@@ -447,9 +448,7 @@ class Editor(QtGui.QPlainTextEdit):
                 return
             elif text == u'\x1b':  # Key escape
                 if self.textCursor().hasSelection():
-                    # Move the text cursor to deselect
-                    self.moveCursor(QtGui.QTextCursor.Left)
-                    self.moveCursor(QtGui.QTextCursor.Right)
+                    self.textCursor().clearSelection()
                 self.inTemplate = False
                 return
         
@@ -460,8 +459,9 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Handle backspaces
         if text == '\b':
-            posInBlock = self.textCursor().positionInBlock()
-            txt = self.textCursor().block().text()
+            tc = self.textCursor()
+            posInBlock = tc.positionInBlock()
+            txt = tc.block().text()
             dedent = 0
             if not txt.strip():
                 dedent = min(posInBlock % 4 or 4, len(txt))
@@ -469,14 +469,19 @@ class Editor(QtGui.QPlainTextEdit):
                 dedent = 4
             if dedent:
                 for i in range(dedent):
-                    self.textCursor().deletePreviousChar()
+                    tc.deletePreviousChar()
+            self.setTextCursor(tc)
+            if dedent:
                 return
         
         # Insert spaces instead of tabs
         elif text == '\t':
-            self.textCursor().beginEditBlock()
-            self.insertPlainText('    ')
-            self.textCursor().endEditBlock()
+            if not completed:
+                self.autocomplete()
+            else:
+                self.textCursor().beginEditBlock()
+                self.insertPlainText('    ')
+                self.textCursor().endEditBlock()
             return
             
         elif text in ['\r', '\n']:
@@ -526,11 +531,8 @@ class Editor(QtGui.QPlainTextEdit):
                 space = space[:subtract]
             
             # Insert text and space
-            self.textCursor().beginEditBlock()
-            self.insertPlainText('\n' + space)
-            self.textCursor().endEditBlock()
-            self.ensureCursorVisible()
-            self.update()
+            super(Editor, self).keyPressEvent(event)
+            self.insertPlainText(space)
             return
         
         # Show brace formatting
@@ -545,10 +547,14 @@ class Editor(QtGui.QPlainTextEdit):
         # Allow event to continue being processed if needed
         super(Editor, self).keyPressEvent(event)
         
+        # Analyse & highlight code
+        self.analyser.analyse()
+        self.highlight()
+        
         # Show variable under cursor (do properly like in AC?)
         variable = self.getWordUnderCursor()
-        if variable and self.codeAnalyser.variables.get(variable):
-            text = variable + ': ' + self.codeAnalyser.variables[variable]
+        if variable and self.analyser.variables.get(variable):
+            text = variable + ': ' + self.analyser.variables[variable]
             codeToolTip(self, text)
             
         # No more selected braces
