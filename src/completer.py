@@ -67,6 +67,22 @@ def process_variables(variables):
         # problem below in the variables section
         if not variables_dict[variable]:
             variables_dict.pop(variable)
+    # Convert values to int/float if possible
+    # Eval values (so that all of the values will be picked up by eval?)
+    for key in variables_dict:
+        # Get the variable value
+        item = variables_dict[key]
+        try:
+            # Try to convert to int
+            variables_dict[key] = int(item)
+        except ValueError:
+            # We would only get a ValueError if the item is a number but not int
+            try:
+                # Try to convert to float
+                variables_dict[key] = float(item)
+            except ValueError:
+                # This might be because the number has more than 1 . in it
+                pass
     return variables_dict
 
 class CodeAnalyser(QtCore.QObject):
@@ -126,15 +142,28 @@ class CodeAnalyser(QtCore.QObject):
         print('From-Imports: {}'.format(self.from_imports))
 
 class Autocompleter(dict):
-
-	def add_section(self, section):
-		self[section] = set()
+    
+    def __init__(self):
+        self.modules = {}
+    
+    def add_module(self, module):
+        # Use hasattr to determine if the module has the __dict__ attr?
+        # Auto-import using __import__?
+        self[module.__name__] = module.__dict__
+        self.modules[module.__name__] = module
 	
 	def autocomplete(self, section, text):
         # Use __dict__ attr of ANY object (add that special variable to AC)
         # Or dir if there isn't any
 		text = set(text)
 		return [comp for comp in self[section] if text.issubset(comp.lower())]
+    
+    def __getitem__(self, obj):
+        completions = list(self.get(obj))
+        if obj in self.modules.keys() and hasattr(self.modules[obj], '__dict__') \
+           or hasattr(self.get(obj), '__dict__'):
+            completions.append('__dict__')
+        return sorted(completions)
 
 # DEFUNCT: Replaced by Autocompleter
 # OR: Use with autocompleter as frontend to display matches

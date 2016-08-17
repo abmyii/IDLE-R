@@ -61,7 +61,7 @@ class PythonStyle(Style):
         String.Symbol:              '#008000', # String
         String.Regex:               '#008000', # String
 
-        Number:                     '#005000',  # Numbers
+        Number:                     '#007000',  # Numbers
 
         Generic.Heading:            'bold #000080', # ?
         Generic.Subheading:         'bold #800080', # ?

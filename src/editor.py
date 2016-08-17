@@ -90,6 +90,9 @@ class Editor(QtGui.QPlainTextEdit):
         self.completer = Completer(self)
         self.autocompleter = Autocompleter()
         
+        # Add the __builtin__ module to the autocompleter
+        self.autocompleter.add_module(__import__('__builtin__'))
+        
         # Status bar
         self.statusBar = statusBar
         
@@ -174,9 +177,8 @@ class Editor(QtGui.QPlainTextEdit):
                 self.completer = Completer(self, ['testing'])
         else:
             # Autocomplete Python with no prefix
-            # Use model with all python words and sorted
-            # new completer? put completer init in class for easy usage?
-            self.completer = Completer(self, ['hello', 'bye'])
+            # put list in model?
+            self.completer = Completer(self, self.autocompleter['__builtin__'])
             
         # Show completer
         if self.completer.completionCount():
@@ -560,10 +562,21 @@ class Editor(QtGui.QPlainTextEdit):
         self.highlight()
         
         # Show variable under cursor (do properly like in AC?)
+        variables = self.analyser.variables
         variable = self.getWordUnderCursor()
         if variable and self.analyser.variables.get(variable):
-            text = variable + ': ' + self.analyser.variables[variable]
+            text = variable + ': ' + str(variables[variable])
             codeToolTip(self, text)
+        else:
+            # Eval line under cursor
+            tc = self.textCursor()
+            tc.select(tc.LineUnderCursor)
+            selected = tc.selectedText()
+            try:
+                # Make sure malicious code doesn't get eval'ed
+                codeToolTip(self, 'Eval: ' + str(eval(selected, variables)))
+            except Exception, e:
+                print(e, selected)
             
         # No more selected braces
         if not self.textCursor().hasSelection() and self.selectedBraces:

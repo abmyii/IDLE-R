@@ -217,6 +217,7 @@ class MenuBar(QtGui.QMenuBar):
 
 def codeToolTip(widget, text):
     # Fix for different font sizes
+    # Make sure tooltip doesn't close at the wrong times
     rect = widget.cursorRect()
     winpos = QtGui.QApplication.activeWindow().pos()
     x = winpos.x()+45+(rect.width()*rect.x()/2)
