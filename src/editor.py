@@ -79,6 +79,10 @@ class Editor(QtGui.QPlainTextEdit):
         font.setPointSize(10)
         self.setFont(font)
         
+        # Tab & Cursor width
+        self.setTabStopWidth(self.tabStopWidth() / 2)
+        self.origCursorWidth = self.cursorWidth()
+        
         # Code analyser
         self.analyser = CodeAnalyser(self)
         
@@ -95,7 +99,9 @@ class Editor(QtGui.QPlainTextEdit):
         # Highlighting
         self.highlight()
         
-        # Update status bar
+        # Add line number label to status bar and update it
+        self.lineNumber = QtGui.QLabel()
+        self.statusBar.addPermanentWidget(self.lineNumber)
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.updateStatusBar)
         self.connect(self, QtCore.SIGNAL("selectionChanged()"),
@@ -104,34 +110,32 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Remove frame and set line wrap mode
         self.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
-        self.setFrameShape(QtGui.QFrame.NoFrame)
+        self.setFrameStyle(QtGui.QFrame.NoFrame)
         
         # Draw the column line
-        self.enableColumnLine = True
-        self.columnLine = ColumnLine(self)
-        fm = self.fontMetrics()
-        self.columnLine.setGeometry((0.5 + fm.width('0')) * 80, 0, 1, 1000)
+        self.enableColumnLine = False
+        if self.enableColumnLine:
+            self.columnLine = ColumnLine(self)
+            fm = self.fontMetrics()
+            self.columnLine.setGeometry((0.5 + fm.width('0')) * 80, 0, 1, 1000)
         
         # Create line number widget
-        self.enableLineNumbers = True
-        self.lineArea = LineArea(self)
-        
-        # Connect relevant signals to line number widget
-        self.connect(self, QtCore.SIGNAL('cursorPositionChanged()'), \
-                    self.updateLineAreaWidth)
-        self.connect(self, QtCore.SIGNAL('updateRequest(QRect, int)'), \
-                    self.updateLineArea)
+        self.enableLineNumbers = False
+        if self.enableLineNumbers:
+            self.lineArea = LineArea(self)
+            
+            # Connect relevant signals to line number widget
+            self.connect(self, QtCore.SIGNAL('cursorPositionChanged()'), \
+                        self.updateLineAreaWidth)
+            self.connect(self, QtCore.SIGNAL('updateRequest(QRect, int)'), \
+                        self.updateLineArea)
+                        
+            # Initialize Line number widget
+            self.updateLineAreaWidth()
         
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
                     self.show_parens)
-        
-        # Tab & Cursor width
-        self.setTabStopWidth(self.tabStopWidth() / 2)
-        self.setCursorWidth(self.cursorWidth() * 2)
-        
-        # Initialize Line number widget
-        self.updateLineAreaWidth()
     
     def autocomplete(self):
         # NOTES:
@@ -521,7 +525,11 @@ class Editor(QtGui.QPlainTextEdit):
             
             # Add last line's tabs to this line (keep indentation)
             line = self.document().findBlock(pos).text()
-            space += ' ' * (len(line) - len(line.strip()))
+            if line.rstrip():
+                space += ' ' * (len(line) - len(line.strip()))
+            else:
+                for i in range(len(line)):
+                    self.textCursor().deletePreviousChar()
 
             # Dedent if last word is one of the block-ending words
             if last in ['break', 'continue', 'pass', 'yield']:
@@ -665,11 +673,12 @@ class Editor(QtGui.QPlainTextEdit):
                 self.replace()
     
     def resizeEvent(self, event):
-        # Resize line area as well
-        super(Editor, self).resizeEvent(event)
-        rect = self.contentsRect()
-        self.lineArea.setGeometry(QtCore.QRect(rect.left(), rect.top(), \
-                                        self.lineAreaWidth(), rect.height()))
+        if self.enableLineNumbers:
+            # Resize line area as well
+            super(Editor, self).resizeEvent(event)
+            rect = self.contentsRect()
+            self.lineArea.setGeometry(QtCore.QRect(rect.left(), rect.top(), \
+                                      self.lineAreaWidth(), rect.height()))
     
     def setFocus(self, isTemplate=False):
         super(Editor, self).setFocus()
@@ -705,13 +714,23 @@ class Editor(QtGui.QPlainTextEdit):
     
     def updateStatusBar(self):
         lines = self.toPlainText().count('\n') + 1
-        message = ''
+        
+        # Info on selection
         if self.textCursor().hasSelection():
             text = self.toPlainText()
             selection = self.textCursor().selectedText()
-            message += 'Selected Text Count: ' + str(text.count(selection)) + ' '
-        message += 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)
+            info = 'Selected Text Count: ' + str(text.count(selection)) + ' '
+            self.statusBar.showMessage(info)
+        
+        # The line number and column number
+        message = 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)
         message += ' '
         message += 'Col: %s' % self.textCursor().positionInBlock()
         message += ' '
-        self.statusBar.showMessage(message)
+        self.lineNumber.setText(message)
+        
+        # Set text cursor width accordingly
+        if self.textCursor().positionInBlock():
+            self.setCursorWidth(self.origCursorWidth * 2)
+        else:
+            self.setCursorWidth(self.origCursorWidth)

@@ -28,7 +28,7 @@ class TabBar(QtGui.QTabWidget):
     def __init__(self, parent):
         super(TabBar, self).__init__(parent)
         
-        # Draw the plus button
+        # Add a + button for adding new tabs
         button = QtGui.QPushButton(QtGui.QIcon("images/plus.png"), '')
         button.setFlat(True)
         button.pressed.connect(parent.newFile)

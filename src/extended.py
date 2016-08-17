@@ -216,6 +216,7 @@ class MenuBar(QtGui.QMenuBar):
         super(MenuBar, self).focusOutEvent(event)
 
 def codeToolTip(widget, text):
+    # Fix for different font sizes
     rect = widget.cursorRect()
     winpos = QtGui.QApplication.activeWindow().pos()
     x = winpos.x()+45+(rect.width()*rect.x()/2)

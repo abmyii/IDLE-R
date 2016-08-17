@@ -30,7 +30,7 @@ class Completer(QtGui.QCompleter):
         rect.setWidth(self.popup().sizeHintForColumn(0)
             + self.popup().verticalScrollBar().sizeHint().width())
         rect.moveTopLeft(self.parent().cursorRect().bottomRight())
-        rect.translate(34, -10)
+        rect.translate(0, -self.parent().font().pointSize())
         self.complete(rect)
 
 def process_variables(variables):
