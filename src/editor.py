@@ -430,6 +430,10 @@ class Editor(QtGui.QPlainTextEdit):
     def isModified(self):
         return self.document().isModified()
     
+    def mousePressEvent(self, event):
+        super(Editor, self).mousePressEvent(event)
+        self.highlight()
+    
     def keyPressEvent(self, event):
         """Handle key-press events"""
         pos = self.textCursor().position()
