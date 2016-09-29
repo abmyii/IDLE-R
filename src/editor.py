@@ -104,7 +104,6 @@ class Editor(QtGui.QPlainTextEdit):
         
         # Add line number label to status bar and update it
         self.lineNumber = QtGui.QLabel()
-        self.statusBar.addPermanentWidget(self.lineNumber)
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.updateStatusBar)
         self.connect(self, QtCore.SIGNAL("selectionChanged()"),
@@ -139,6 +138,15 @@ class Editor(QtGui.QPlainTextEdit):
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
                     self.show_parens)
+    
+    def focusInEvent(self, *args):
+        self.statusBar.addPermanentWidget(self.lineNumber)
+        self.lineNumber.show()
+        super(Editor, self).focusInEvent(*args)
+    
+    def focusOutEvent(self, *args):
+        self.statusBar.removeWidget(self.lineNumber)
+        super(Editor, self).focusOutEvent(*args)
     
     def autocomplete(self):
         # NOTES:
