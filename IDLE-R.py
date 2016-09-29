@@ -499,6 +499,7 @@ class IDLE_R(QtGui.QMainWindow):
         
         # Add the tab
         if ow:
+            # Overwrite current tab if it is untitled and not modified
             index = self.tab_bar.currentIndex()
             self.tab_bar.removeTab(index)
         tab = self.tab_bar.addTab(editor, name)
@@ -514,32 +515,40 @@ class IDLE_R(QtGui.QMainWindow):
         Action.triggered.connect(action)
         return Action
     
-    def openFile(self, filename=False):
+    def openFile(self, filenames=False):
         """Open a new file"""
         # Ask user for file
-        if not filename:
-            filename = QtGui.QFileDialog.getOpenFileName(
+        if not filenames:
+            filenames = QtGui.QFileDialog.getOpenFileNames(
                 self, 'Open File', os.curdir,
                 "Python files (*.py *.pyw *.py3);; All files (*)"
             )[0]
-            if not filename:  # Filename was blank ('')
+            if not filenames:  # Filenames was blank ('')
                 return
+        
+        # Make filenames a list if it is just a string
+        if isinstance(filenames, str):
+            filenames = [filenames]
+        
+        # Iterate through filenames
+        for filename in filenames:
+            # Rewrite recent files & Update Recent Files list
+            self.writeRecentFile(filename)
+            self.addMenuActions()
             
-        # Rewrite recent files & Update Recent Files list
-        self.writeRecentFile(filename)
-        self.addMenuActions()
-        
-        # Read file and display
-        text = open_file(filename, 'r').read()
-        name = os.path.split(str(filename))[-1]
-        
-        # Check which way to open file & open
-        editor = self.tab_bar.currentWidget()
-        if editor:
-            if editor.isUntitled and not editor.document().isModified():
-                self.newFile(name, True, text, filename)
-                return
-        self.newFile(name, False, text, filename)
+            # Read file and display
+            text = open_file(filename, 'r').read()
+            name = os.path.split(str(filename))[-1]
+            
+            # Check which way to open file & open
+            editor = self.tab_bar.currentWidget()
+            if editor:
+                if editor.isUntitled and not editor.document().isModified():
+                    # Overwrite this tab if it is untitled and not modified
+                    self.newFile(name, True, text, filename)
+                else:
+                    # Don't overwrite this tab
+                    self.newFile(name, False, text, filename)
     
     def openRecentFile(self, rfile):
         """Open a recent file"""

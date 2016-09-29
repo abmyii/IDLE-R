@@ -576,7 +576,7 @@ class Editor(QtGui.QPlainTextEdit):
                 # Make sure malicious code doesn't get eval'ed
                 codeToolTip(self, 'Eval: ' + str(eval(selected, variables)))
             except Exception, e:
-                print(e, selected)
+                print('Eval Error: ' + str(e, selected))
             
         # No more selected braces
         if not self.textCursor().hasSelection() and self.selectedBraces:
