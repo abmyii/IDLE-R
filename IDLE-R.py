@@ -546,9 +546,8 @@ class IDLE_R(QtGui.QMainWindow):
                 if editor.isUntitled and not editor.document().isModified():
                     # Overwrite this tab if it is untitled and not modified
                     self.newFile(name, True, text, filename)
-                else:
-                    # Don't overwrite this tab
-                    self.newFile(name, False, text, filename)
+                    continue
+            self.newFile(name, False, text, filename)
     
     def openRecentFile(self, rfile):
         """Open a recent file"""
