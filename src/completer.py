@@ -2,6 +2,7 @@ from PySide import QtCore, QtGui
 import re
 import time
 
+
 class Completer(QtGui.QCompleter):
     
     def __init__(self, parent, stringList=[]):
@@ -32,6 +33,7 @@ class Completer(QtGui.QCompleter):
         rect.moveTopLeft(self.parent().cursorRect().bottomRight())
         rect.translate(0, -self.parent().font().pointSize())
         self.complete(rect)
+
 
 def process_variables(variables):
     # Processes the variables list and outputs a dict with the
@@ -84,6 +86,7 @@ def process_variables(variables):
                 # This might be because the number has more than 1 . in it
                 pass
     return variables_dict
+
 
 class CodeAnalyser(QtCore.QObject):
     
@@ -141,6 +144,7 @@ class CodeAnalyser(QtCore.QObject):
         print('Imports: {}'.format(self.imports))
         print('From-Imports: {}'.format(self.from_imports))
 
+
 class Autocompleter(dict):
     
     def __init__(self):
@@ -164,6 +168,7 @@ class Autocompleter(dict):
            or hasattr(self.get(obj), '__dict__'):
             completions.append('__dict__')
         return sorted(completions)
+
 
 # DEFUNCT: Replaced by Autocompleter
 # OR: Use with autocompleter as frontend to display matches

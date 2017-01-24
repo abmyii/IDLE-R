@@ -99,9 +99,6 @@ class Editor(QtGui.QPlainTextEdit):
         # Syntax highlighting
         self.highlighter = PygmentsHighlighter(self)
         
-        # Highlighting
-        self.highlight()
-        
         # Add line number label to status bar and update it
         self.lineNumber = QtGui.QLabel()
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
@@ -142,6 +139,7 @@ class Editor(QtGui.QPlainTextEdit):
     def focusInEvent(self, *args):
         self.statusBar.addPermanentWidget(self.lineNumber)
         self.lineNumber.show()
+        self.highlight()
         super(Editor, self).focusInEvent(*args)
     
     def focusOutEvent(self, *args):
@@ -586,7 +584,10 @@ class Editor(QtGui.QPlainTextEdit):
             selected = tc.selectedText()
             try:
                 # Make sure malicious code doesn't get eval'ed
-                codeToolTip(self, 'Eval: ' + str(eval(selected, variables)))
+                # Whoops. It evals anything still.
+                # TODO: Fix
+                #codeToolTip(self, 'Eval: ' + str(eval(selected, variables)))
+                pass
             except Exception, e:
                 print('Eval Error: ' + str(e, selected))
             
@@ -746,6 +747,9 @@ class Editor(QtGui.QPlainTextEdit):
             selection = self.textCursor().selectedText()
             info = 'Selected Text Count: ' + str(text.count(selection)) + ' '
             self.statusBar.showMessage(info)
+        else:
+            # Clear any message that might have been shown before
+            self.statusBar.clearMessage()
         
         # The line number and column number
         message = 'Ln: %s/%s' % (self.textCursor().blockNumber() + 1, lines)

@@ -23,6 +23,7 @@
 #  
 from PySide import QtCore, QtGui
 
+
 class TabBar(QtGui.QTabWidget):
     
     def __init__(self, parent):

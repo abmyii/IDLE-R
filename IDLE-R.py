@@ -30,10 +30,12 @@ from src.editor import Editor
 from src.tabBar import TabBar
 from src.extended import QAction, StatusBar, MenuBar
 
+
 def open_file(*args):
     sep = os.path.sep
     fname = args[0].replace('/', sep) # For other OSes
     return open(fname, *args[1:])
+
 
 def make_settings():
     """
@@ -55,6 +57,7 @@ def make_settings():
     # Recent files file
     if not os.path.isfile(home + '.idle-r/recent_files'):
         with open_file(home + '.idle-r/recent_files', 'w') as rfile: pass
+
 
 class AboutIDLE_R(QtGui.QDialog):
 
@@ -86,6 +89,7 @@ IDLE-R (Intergrated Development Learning Environment Reimagined), is a
 clone of IDLE but with fixes to make it more user and learner friendly.
 """
 ))
+
 
 class IDLE_R(QtGui.QMainWindow):
     
@@ -427,14 +431,15 @@ class IDLE_R(QtGui.QMainWindow):
 
     def getTemplates(self):
         home = os.path.expanduser('~') + os.path.sep
+        cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
         templates = []
         for template in os.listdir(home + '.idle-r/templates'):
             if not template[0] == '.':  # Not a hidden file
                 templates.append(home + '.idle-r/templates/' + template)
-        if os.path.isdir('templates'):
-            for template in os.listdir('templates'):
+        if os.path.isdir(cwd + 'templates'):
+            for template in os.listdir(cwd + 'templates'):
                 if not template[0] == '.':  # Not a hidden file
-                    templates.append('templates/' + template)
+                    templates.append(cwd + 'templates/' + template)
         return templates
     
     def getWorkspaces(self):
@@ -526,10 +531,10 @@ class IDLE_R(QtGui.QMainWindow):
             if not filenames:  # Filenames was blank ('')
                 return
         
-        # Make filenames a list if it is just a string
-        if isinstance(filenames, str):
+        # Make filenames a list if it is not a list
+        if not isinstance(filenames, list):
             filenames = [filenames]
-        
+
         # Iterate through filenames
         for filename in filenames:
             # Rewrite recent files & Update Recent Files list
@@ -831,13 +836,15 @@ class IDLE_R(QtGui.QMainWindow):
                 workspace.write(f + '\n')
             workspace.write(str(self.tab_bar.currentIndex()))
 
+
 if __name__ == '__main__':
     # Make the default settings
     make_settings()
     
     # Run the IDE
     app = QtGui.QApplication(sys.argv)
-    with open('theme' + os.path.sep + 'style.qss') as stylesheet:
+    cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
+    with open(cwd + 'theme' + os.path.sep + 'style.qss') as stylesheet:
         app.setStyleSheet(stylesheet.read())
     window = IDLE_R()
     window.show()

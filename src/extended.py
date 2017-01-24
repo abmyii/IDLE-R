@@ -25,6 +25,7 @@ import PySide
 from PySide import QtCore, QtGui
 import threading
 
+
 class QAction(QtGui.QAction):
     
     def __init__(self, *args):
@@ -32,6 +33,7 @@ class QAction(QtGui.QAction):
         def doAction():
             args[-1](self.text())
         self.triggered.connect(doAction)
+
 
 class StatusBar(QtGui.QStatusBar):
     widgets = []
@@ -47,6 +49,7 @@ class StatusBar(QtGui.QStatusBar):
     def removeWidget(self, widget):
         self.widgets.remove(widget)
         super(StatusBar, self).removeWidget(widget)
+
 
 class FindDialog(QtGui.QDialog):
     
@@ -123,6 +126,7 @@ class FindDialog(QtGui.QDialog):
             'find_text': self.lineEdit.text()
         }
         return self.lineEdit.text(), states, self._succesful
+
 
 class ReplaceDialog(QtGui.QDialog):
     
@@ -209,11 +213,13 @@ class ReplaceDialog(QtGui.QDialog):
     def setPressed(self, *args):
         if args[0]: self.buttonPressed = args[0].text()
 
+
 class MenuBar(QtGui.QMenuBar):
     
     def focusOutEvent(self, event):
         self.parent().setAlt()
         super(MenuBar, self).focusOutEvent(event)
+
 
 def codeToolTip(widget, text):
     # Fix for different font sizes
