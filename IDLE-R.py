@@ -337,6 +337,15 @@ class IDLE_R(QtGui.QMainWindow):
     def auto_stack_view(self):
         pass
     
+    def changeWindowName(self):
+        editor = self.tab_bar.currentWidget()
+        try:
+            # Set window name based on file name
+            name = os.path.basename(editor.filename)
+            self.setWindowTitle('IDLE-R: ' + name + ' - ' + editor.filename)
+        except AttributeError:
+            pass
+    
     def closeEvent(self, event):
         edited = False
         for tab in range(self.tab_bar.count()):
