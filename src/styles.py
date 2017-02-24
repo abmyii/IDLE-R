@@ -23,7 +23,7 @@
 # 
 from pygments.style import Style
 from pygments.token import Keyword, Name, Comment, String, Error, \
-     Number, Operator, Generic, Whitespace
+     Number, Operator, Generic, Whitespace, Token, Punctuation
 
 
 class PythonStyle(Style):
@@ -45,8 +45,11 @@ class PythonStyle(Style):
 
         Operator.Word:              '#ff7700', # in, and, or (and such)
 
+        Token.True:		    '#800080',
+        Token.False:		    '#800080',
+
         Name.Builtin:               '#800080', # all, abs (and such)
-        Name.Builtin.Pseudo:        '#800080', # self, True, False
+        Name.Builtin.Pseudo:        '#000000', # self, True, False
         Name.Function:              '#0000aa', # def <name.function>
         Name.Class:                 '#0000aa', # class <name.class>
         Name.Namespace:             '#000000', # import <...> or from <...>
@@ -55,7 +58,7 @@ class PythonStyle(Style):
         Name.Entity:                'bold #800', # ?
         Name.Attribute:             '#1e90ff', # ?
         Name.Tag:                   'bold #1e90ff', # ?
-        Name.Decorator:             '#555555', # Decorator
+        Name.Decorator:             '#800080', # Decorator
 
         String:                     '#008000', # String
         String.Symbol:              '#008000', # String

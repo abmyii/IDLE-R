@@ -28,6 +28,8 @@ from src.completer import CodeAnalyser, Completer, Autocompleter
 import random
 import re
 import os
+import ast
+
 
 class LineArea(QtGui.QWidget):
     
@@ -41,10 +43,12 @@ class LineArea(QtGui.QWidget):
     def paintEvent(self, event):
         self.editor.lineAreaPaintEvent(event)
 
+
 class ColumnLine(LineArea):
 
     def paintEvent(self, event):
         self.editor.columnLinePaintEvent(event)
+
 
 class Editor(QtGui.QPlainTextEdit):
     isUntitled = False
@@ -71,7 +75,8 @@ class Editor(QtGui.QPlainTextEdit):
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
-        
+	self.setAcceptDrops(False)
+
         # Set the Font
         font = QtGui.QFont()
         font.setFamily('Courier')
@@ -135,6 +140,11 @@ class Editor(QtGui.QPlainTextEdit):
         # Connect other signals
         self.connect(self, QtCore.SIGNAL('copyAvailable(bool)'), \
                     self.show_parens)
+
+        # Set cursor format
+        format = QtGui.QTextCharFormat()
+        format.setForeground(QtGui.QColor('#000000'))
+        self.setCurrentCharFormat(format)
     
     def focusInEvent(self, *args):
         self.statusBar.addPermanentWidget(self.lineNumber)
@@ -438,6 +448,7 @@ class Editor(QtGui.QPlainTextEdit):
         text = event.text()
         last = self.document().findBlock(pos).text().strip()
         completer_isVisible = self.completer.popup().isVisible()
+
         
         # Last action was not inserting a completion
         completed = self.completed
@@ -472,9 +483,18 @@ class Editor(QtGui.QPlainTextEdit):
             cursor = self.textCursor()
             cursor.clearSelection()
             self.setTextCursor(cursor)
+
+        # Move to beginning of first word whith HOME key
+        if event.key() == 16777232:
+            cursor = self.textCursor()
+            cursor.movePosition(QtGui.QTextCursor.StartOfLine)
+            cursor.movePosition(QtGui.QTextCursor.NextWord)
+            self.setTextCursor(cursor)
+            return
         
         # Handle backspaces
         if text == '\b':
+            # fix and do in one edit block
             tc = self.textCursor()
             posInBlock = tc.positionInBlock()
             txt = tc.block().text()
@@ -568,10 +588,10 @@ class Editor(QtGui.QPlainTextEdit):
         super(Editor, self).keyPressEvent(event)
         
         # Analyse & highlight code
-        self.analyser.analyse()
+        """self.analyser.analyse()"""
         self.highlight()
         
-        # Show variable under cursor (do properly like in AC?)
+        """# Show variable under cursor (do properly like in AC?)
         variables = self.analyser.variables
         variable = self.getWordUnderCursor()
         if variable and self.analyser.variables.get(variable):
@@ -587,9 +607,13 @@ class Editor(QtGui.QPlainTextEdit):
                 # Whoops. It evals anything still.
                 # TODO: Fix
                 #codeToolTip(self, 'Eval: ' + str(eval(selected, variables)))
-                pass
+                ## find space after cursor and select behind, run parse and
+                ## select last
+                tree = ast.parse(selected)
+                last = tree.body[-1]
+                print tree
             except Exception, e:
-                print('Eval Error: ' + str(e, selected))
+                print('Eval Error: ' + str(e), selected)"""
             
         # No more selected braces
         if not self.textCursor().hasSelection() and self.selectedBraces:
@@ -745,7 +769,7 @@ class Editor(QtGui.QPlainTextEdit):
         if self.textCursor().hasSelection():
             text = self.toPlainText()
             selection = self.textCursor().selectedText()
-            info = 'Selected Text Count: ' + str(text.count(selection)) + ' '
+            info = 'Selection Duplicates Count: ' + str(text.count(selection)) + ' '
             self.statusBar.showMessage(info)
         else:
             # Clear any message that might have been shown before

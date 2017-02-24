@@ -335,12 +335,12 @@ class IDLE_R(QtGui.QMainWindow):
     def auto_stack_view(self):
         pass
     
-    def closeEvent(self, QCloseEvent):
+    def closeEvent(self, event):
         edited = False
-        """for tab in range(self.tab_bar.count()):
+        for tab in range(self.tab_bar.count()):
             if self.tab_bar.widget(tab).isModified():
                 edited = True
-                break"""
+                break
         
         if edited:
             msgBox = QtGui.QMessageBox(self)
@@ -351,7 +351,7 @@ class IDLE_R(QtGui.QMainWindow):
             # Info
             msgBox.setText("Some documents have been modified.")
             msgBox.setInformativeText(
-                "Do you want to save the files?"
+                "Do you want to discard the changes?"
             )
             msgBox.setIcon(msgBox.Warning)
             
@@ -363,11 +363,11 @@ class IDLE_R(QtGui.QMainWindow):
             ret = msgBox.exec_()
     
             if ret == msgBox.Discard:
-                super(IDLE_R, self).close()
+                self.close()
             else:
-                QtGui.QCloseEvent.ignore()
+                event.ignore()
         else:
-            super(IDLE_R, self).close()
+            self.close()
     
     def closeTab(self, index=-1):
         if index == -1:
@@ -809,6 +809,7 @@ class IDLE_R(QtGui.QMainWindow):
     
     def writeRecentFile(self, filename):
         """Write the recent files"""
+        filename = os.path.realpath(filename)  # make path absolute
         home = os.path.expanduser('~') + os.path.sep
         # Get the old data in the "recent_files" file
         with open_file(home + '.idle-r/recent_files') as f:

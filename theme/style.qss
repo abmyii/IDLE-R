@@ -1,3 +1,7 @@
+QPlainTextEditor {
+    text-color: black;
+}
+
 QTabWidget {
     selection-background-color: #3d8ec9;
 }
