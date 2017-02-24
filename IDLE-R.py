@@ -32,9 +32,8 @@ from src.extended import QAction, StatusBar, MenuBar
 
 
 def open_file(*args):
-    sep = os.path.sep
-    fname = args[0].replace('/', sep) # For other OSes
-    return open(fname, *args[1:])
+    filename = args[0].replace('/', os.path.sep) # For other OSes
+    return open(filename, *args[1:])
 
 
 def make_settings():
@@ -159,6 +158,9 @@ class IDLE_R(QtGui.QMainWindow):
             self.tab_bar.tabCloseRequested.connect(self.closeTab)
             self.tab_bar.currentChanged.connect(self.editorUpdateStatusBar)
             self.tab_bar.setTabsClosable(True)
+            
+            # Change window name to the current filename
+            self.tab_bar.currentChanged.connect(self.changeWindowName)
             
             # Set central widget
             self.setCentralWidget(self.tab_bar)
@@ -475,17 +477,15 @@ class IDLE_R(QtGui.QMainWindow):
             Action.setShortcut(shortcut)
         return Action
         
-    def newFile(self, name=0, ow=0, text=0, fname=0, cpos=0, template=0):
+    def newFile(self, filename=0, ow=0, text=0, cpos=0, template=0):
         """Make a new file"""
-        if name:
-            name = name
-        else:
-            name = "untitled{}.py".format(self.file_index)
+        if not filename:
+            filename = "untitled{}.py".format(self.file_index)
             self.file_index += 1
         
         # Make editor and configure
         editor = Editor(self.statusBar)
-        editor.fname = name
+        editor.filename = filename
         editor.isUntitled = True  # Makes untitled files distinguishable
         editor.textChanged.connect(self.unsaved)
         
@@ -507,7 +507,7 @@ class IDLE_R(QtGui.QMainWindow):
             # Overwrite current tab if it is untitled and not modified
             index = self.tab_bar.currentIndex()
             self.tab_bar.removeTab(index)
-        tab = self.tab_bar.addTab(editor, name)
+        tab = self.tab_bar.addTab(editor, os.path.basename(filename))
         self.tab_bar.setCurrentIndex(tab)
         
         # Set focus to the editor
@@ -543,16 +543,15 @@ class IDLE_R(QtGui.QMainWindow):
             
             # Read file and display
             text = open_file(filename, 'r').read()
-            name = os.path.split(str(filename))[-1]
             
             # Check which way to open file & open
             editor = self.tab_bar.currentWidget()
             if editor:
                 if editor.isUntitled and not editor.document().isModified():
                     # Overwrite this tab if it is untitled and not modified
-                    self.newFile(name, True, text, filename)
+                    self.newFile(filename, True, text)
                     continue
-            self.newFile(name, False, text, filename)
+            self.newFile(filename, False, text)
     
     def openRecentFile(self, rfile):
         """Open a recent file"""
@@ -684,8 +683,8 @@ class IDLE_R(QtGui.QMainWindow):
             
         else:
             # Write to file
-            filename = editor.fname
-            with open_file(editor.fname, 'w') as f:
+            filename = editor.filename
+            with open_file(editor.filename, 'w') as f:
                 f.write(text)
         
         # Add to recent files
@@ -713,7 +712,7 @@ class IDLE_R(QtGui.QMainWindow):
                     QtGui.QMessageBox.information(
                         self, 'Workspace Save Aborted!', message)
                     return
-            files.append(editor.fname)
+            files.append(editor.filename)
             
         # Get workspace name
         name, ok = QtGui.QInputDialog.getText(

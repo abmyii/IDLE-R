@@ -52,7 +52,7 @@ class ColumnLine(LineArea):
 
 class Editor(QtGui.QPlainTextEdit):
     isUntitled = False
-    fname = ''
+    filename = ''
     indentation = 0
     selectedBraces = 0
     # Vars for searching for text
@@ -75,7 +75,7 @@ class Editor(QtGui.QPlainTextEdit):
     
     def __init__(self, statusBar):
         super(Editor, self).__init__()
-	self.setAcceptDrops(False)
+        self.setAcceptDrops(False)
 
         # Set the Font
         font = QtGui.QFont()
