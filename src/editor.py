@@ -223,7 +223,7 @@ class Editor(QtGui.QPlainTextEdit):
         self.setTextCursor(cursor)
         self.completed = True
     
-    def find(self, text='', pos=None, comp=False, states={}):
+    def find(self, text='', pos=None, comp=False, states={}, returnCursor=True):
         # Check and get text if none was given
         if not text:
             states = {
@@ -281,15 +281,14 @@ class Editor(QtGui.QPlainTextEdit):
                 else:
                     cursor = self.document().find(self.find_text, pos, flags)
                 
-                # Replace current cursor if there is a new one given
+                # Return search result
                 if cursor.hasSelection():
-                    self.setTextCursor(cursor)
-                    if comp: return True
+                    if comp: return (cursor, True) if returnCursor else True
                 else:
                     # Otherwise try searching from the beginning of the document
-                    if comp: return False
+                    if comp: return (cursor, False) if returnCursor else False
                     self.find(text, 0, comp, states)
-            elif comp: return False
+            elif comp: return (cursor, False) if returnCursor else False
     
     def getWordUnderCursor(self, position=False):
         cursor = self.textCursor()
@@ -701,33 +700,41 @@ class Editor(QtGui.QPlainTextEdit):
             'replace_text': self.replace_text,
             'replace_with': self.replace_with,
         }
+        
+        # Run dialog
         find, replace, states, successful = ReplaceDialog(states).exec_()
-        if not successful:
-            return
+        
+        # Save dialog state
         self.replace_caseSensitive = states['caseSensitive']
         self.replace_wholeWord = states['wholeWord']
         self.replace_backward = states['backward']
         self.replace_text = states['replace_text']
         self.replace_with = states['replace_with']
-        if successful:
-            do_replace = False
-            while True:
-                found = self.find(find, None, True, states)
-                if found is True:
-                    do_replace = True
-                    self.insertPlainText(replace)
-                if not found or not states['replaceAll']:
-                    break
-            text = self.toPlainText()
-            if not states['replaceAll'] and do_replace and find in text:
-                self.replace()
+        
+        text = self.toPlainText()
+        if not successful or not states['replaceAll']: # If not successful, Enter was pressed.
+            # Just replace one ocurrence
+            found = self.find(find, None, True, states)
+            if found:
+                self.insertPlainText(replace)
+            # keep dialog alive
+        elif successful and states['replaceAll']:
+            # Use regex to replace all occurrences
+            text = re.sub(re.escape(find), re.escape(replace), self.toPlainText(),
+                          re.U if self.replace_caseSensitive else re.I|re.U)
+        
+            # Replace old text
+            self.textCursor().beginEditBlock()
+            self.selectAll()
+            self.insertPlainText(text)
+            self.textCursor().endEditBlock()
     
     def resizeEvent(self, event):
         if self.enableLineNumbers:
             # Resize line area as well
             super(Editor, self).resizeEvent(event)
             rect = self.contentsRect()
-            self.lineArea.setGeometry(QtCore.QRect(rect.left(), rect.top(), \
+            self.lineArea.setGeometry(QtCore.QRect(rect.left(), rect.top(),
                                       self.lineAreaWidth(), rect.height()))
     
     def setFocus(self, isTemplate=False):

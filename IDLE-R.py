@@ -342,7 +342,11 @@ class IDLE_R(QtGui.QMainWindow):
         try:
             # Set window name based on file name
             name = os.path.basename(editor.filename)
-            self.setWindowTitle('IDLE-R: ' + name + ' - ' + editor.filename)
+            title = 'IDLE-R: ' + name + ' - ' + editor.filename
+            if editor.isModified():
+                title = '* ' + title + ' *'
+            self.setWindowTitle(title)
+            editor = self.tab_bar.currentWidget()
         except AttributeError:
             pass
     
@@ -496,7 +500,10 @@ class IDLE_R(QtGui.QMainWindow):
         editor = Editor(self.statusBar)
         editor.filename = filename
         editor.isUntitled = True  # Makes untitled files distinguishable
+        
+        # Change tab text and window title to show file has been edited
         editor.textChanged.connect(self.unsaved)
+        editor.textChanged.connect(self.changeWindowName)
         
         # Add given text if any
         if text:
