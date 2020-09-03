@@ -1,33 +1,13 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 #  extended.py
-#  
-#  Copyright 2015-2016 abmyii
-#  
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#  
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#  
-# 
+#
 import PySide
 from PySide import QtCore, QtGui
 import threading
 
 
 class QAction(QtGui.QAction):
-    
+
     def __init__(self, *args):
         super(QAction, self).__init__(*args[:-1])
         def doAction():
@@ -37,22 +17,22 @@ class QAction(QtGui.QAction):
 
 class StatusBar(QtGui.QStatusBar):
     widgets = []
-    
+
     def addWidget(self, widget):
         self.widgets.append(widget)
         super(StatusBar, self).addWidget(widget)
-    
+
     def addPermanentWidget(self, widget):
         self.widgets.append(widget)
         super(StatusBar, self).addPermanentWidget(widget)
-    
+
     def removeWidget(self, widget):
         self.widgets.remove(widget)
         super(StatusBar, self).removeWidget(widget)
 
 
 class FindDialog(QtGui.QDialog):
-    
+
     def __init__(self, states, parent=None):
         super(FindDialog, self).__init__(parent)
         self._succesful = True
@@ -111,11 +91,11 @@ class FindDialog(QtGui.QDialog):
         mainLayout.addWidget(extension, 1, 0, 1, 2)
         self.setLayout(mainLayout)
         self.setWindowTitle("Search Dialog")
-    
+
     def close_(self):
         super(FindDialog, self).close()
         self._succesful = False
-    
+
     def exec_(self):
         super(FindDialog, self).exec_()
         states = {
@@ -129,7 +109,7 @@ class FindDialog(QtGui.QDialog):
 
 
 class ReplaceDialog(QtGui.QDialog):
-    
+
     def __init__(self, states, parent=None):
         super(ReplaceDialog, self).__init__(parent)
         self._succesful = True
@@ -140,7 +120,7 @@ class ReplaceDialog(QtGui.QDialog):
         if states['replace_text']:
             self.find.setText(states['replace_text'])
         label.setBuddy(self.find)
-        
+
         label_rep = QtGui.QLabel("Replace With:")
         self.replace = QtGui.QLineEdit()
         if states['replace_with']:
@@ -193,11 +173,11 @@ class ReplaceDialog(QtGui.QDialog):
         mainLayout.addWidget(buttonBox, 0, 1)
         self.setLayout(mainLayout)
         self.setWindowTitle("Search Dialog")
-    
+
     def close_(self):
         super(ReplaceDialog, self).close()
         self._succesful = False
-    
+
     def exec_(self):
         super(ReplaceDialog, self).exec_()
         states = {
@@ -209,13 +189,13 @@ class ReplaceDialog(QtGui.QDialog):
             'replaceAll': False if self.buttonPressed == "Replace" else True,
         }
         return self.find.text(), self.replace.text(), states, self._succesful
-    
+
     def setPressed(self, *args):
         if args[0]: self.buttonPressed = args[0].text()
 
 
 class MenuBar(QtGui.QMenuBar):
-    
+
     def focusOutEvent(self, event):
         self.parent().setAlt()
         super(MenuBar, self).focusOutEvent(event)

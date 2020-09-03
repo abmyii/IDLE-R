@@ -1,6 +1,6 @@
 IDLE-Remake
 ===========
-A simple IDE aiming to be a remake of, and replacement to IDLE.
+A simple IDE aiming to be a remake of, and replacement to IDLE. Inspired by https://inventwithpython.com/blog/2014/11/20/idle-reimagined/.
 
 Requirements
 =============

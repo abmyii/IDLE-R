@@ -4,28 +4,28 @@ import time
 
 
 class Completer(QtGui.QCompleter):
-    
+
     def __init__(self, parent, stringList=[]):
         if stringList:
             QtGui.QCompleter.__init__(self, stringList, parent)
         else:
             QtGui.QCompleter.__init__(self, parent)
-        
+
         # Default setup
         self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
         self.setWidget(parent)
         self.setCompletionMode(self.PopupCompletion)
         self.connect(self, QtCore.SIGNAL("activated(const QString&)"), self.onActivated)
-    
+
     def onActivated(self, completion):
         self.parent().complete(completion, self.completionPrefix())
-    
+
     def showCompleter(self):
         # DON'T COMPLETE IF THERE IS ONLY ONE OPTION (just pick first option)
         # Set the start index for completing
         popup = self.popup()
         popup.setCurrentIndex(self.completionModel().index(0,0))
-        
+
         # Start completing
         rect = self.parent().cursorRect()
         rect.setWidth(self.popup().sizeHintForColumn(0)
@@ -89,35 +89,35 @@ def process_variables(variables):
 
 
 class CodeAnalyser(QtCore.QObject):
-    
+
     def __init__(self, editor):
         self._editor = editor
-    
+
     def analyse(self):
         # Make all of the re's sets so that we don't get two identical matches
         start_time = time.time()
-        
+
         text = self._editor.toPlainText()
-        
+
         # find comments and then remove them for the text we are analysing
         # so we don't get code confused with comments
         self.comments = re.findall('(#.*)', text)
         text = re.sub('(#.*)', '', text)
-        
+
         # find lambdas and then remove them so we don't get them
         # confused with variables
         self.lambdas = re.findall('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', text)
         text = re.sub('([a-zA-Z]\w*)\s*=\s*lambda\s+(.+):', '', text)
-        
+
         # find variables
         # work out how to catch variables that are blocked by the ([^;\n]*)
         # (i.e variables defined on two lines or that has \ or ; in a string)
         variables = re.findall('([a-zA-Z_]\w*)\s*=\s*([^;\n]*)', text)
         self.variables = process_variables(variables)
-        
+
         # find functions
         self.functions = re.findall('def\s+([a-zA-Z_]\w*)\s*\((.*)\)', text)
-        
+
         # find classes
         classes = re.findall('class\s+([a-zA-Z_]\w*)\s*(\(.*\))*:', text)
         self.classes = map(lambda m: [m[0], re.sub('[()]', '', m[1])], classes)
@@ -127,13 +127,13 @@ class CodeAnalyser(QtCore.QObject):
         self.class_functions = re.findall('def\s+([_]\w*)\s*\((.*)\)', text)
         #print classes, class_functions
         #print len(classes), len(class_functions)
-        
+
         # find imports
         self.imports = re.findall('import\s+([a-zA-Z\.][\w\.]*)', text)
         self.from_imports = re.findall(
          'from\s+([a-zA-Z\.][\w\.]*)\s+import\s+([a-zA-Z\.][\w\.]*)',
          text)
-         
+
         # Print the analysis info (debug)
         print('Analysis took: {} s'.format(time.time() - start_time))
         print('Comments: {}'.format(self.comments))
@@ -146,22 +146,22 @@ class CodeAnalyser(QtCore.QObject):
 
 
 class Autocompleter(dict):
-    
+
     def __init__(self):
         self.modules = {}
-    
+
     def add_module(self, module):
         # Use hasattr to determine if the module has the __dict__ attr?
         # Auto-import using __import__?
         self[module.__name__] = module.__dict__
         self.modules[module.__name__] = module
-	
-	def autocomplete(self, section, text):
+
+    def autocomplete(self, section, text):
         # Use __dict__ attr of ANY object (add that special variable to AC)
         # Or dir if there isn't any
-		text = set(text)
-		return [comp for comp in self[section] if text.issubset(comp.lower())]
-    
+        text = set(text)
+        return [comp for comp in self[section] if text.issubset(comp.lower())]
+
     def __getitem__(self, obj):
         completions = list(self.get(obj))
         if obj in self.modules.keys() and hasattr(self.modules[obj], '__dict__') \
@@ -173,11 +173,11 @@ class Autocompleter(dict):
 # DEFUNCT: Replaced by Autocompleter
 # OR: Use with autocompleter as frontend to display matches
 class PythonCompleter(QtGui.QCompleter):
-	def __init__(self, editor, db=None):
-		# make the wordlist
-		self.wordlist = ['import', 'print']
+    def __init__(self, editor, db=None):
+        # make the wordlist
+        self.wordlist = ['import', 'print']
 
-		# setup the completer
-		QtGui.QCompleter.__init__(self, sorted(self.wordlist), editor)
-		self.setModelSorting(QtGui.QCompleter.CaseSensitivelySortedModel)
-		self.setWrapAround(False)
+        # setup the completer
+        QtGui.QCompleter.__init__(self, sorted(self.wordlist), editor)
+        self.setModelSorting(QtGui.QCompleter.CaseSensitivelySortedModel)
+        self.setWrapAround(False)

@@ -1,29 +1,9 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 #  styles.py
-#  
-#  Copyright 2015-2016 abmyii
-#  
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#  
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#  
-# 
+#
 from pygments.style import Style
 from pygments.token import Keyword, Name, Comment, String, Error, \
-     Number, Operator, Generic, Whitespace, Token, Punctuation
+    Number, Operator, Generic, Whitespace
 
 
 class PythonStyle(Style):
@@ -42,11 +22,9 @@ class PythonStyle(Style):
 
         Keyword:                    '#ff7700', # Keywords
         Keyword.Type:               '#ff7700', # Keywords
+        Keyword.Constant:           '#800080', # True/False
 
         Operator.Word:              '#ff7700', # in, and, or (and such)
-
-        Token.True:		    '#800080',
-        Token.False:		    '#800080',
 
         Name.Builtin:               '#800080', # all, abs (and such)
         Name.Builtin.Pseudo:        '#000000', # self, True, False

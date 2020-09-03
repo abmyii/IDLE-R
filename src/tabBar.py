@@ -1,44 +1,24 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
 #
 #  tabbar.py
-#  
-#  Copyright 2015-2016 abmyii
-#  
-#  This program is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#  
-#  This program is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#  
-#  You should have received a copy of the GNU General Public License
-#  along with this program; if not, write to the Free Software
-#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
-#  MA 02110-1301, USA.
-#  
-#  
+#
 from PySide import QtCore, QtGui
 
 
 class TabBar(QtGui.QTabWidget):
-    
+
     def __init__(self, parent):
         super(TabBar, self).__init__(parent)
-        
+
         # Add a + button for adding new tabs
         button = QtGui.QPushButton(QtGui.QIcon("images/plus.png"), '')
         button.setFlat(True)
         button.pressed.connect(parent.newFile)
         self.setCornerWidget(button)
-        
+
         # Customise look
         tB = QtGui.QTabBar
         self.tabBar().setShape(tB.RoundedNorth)
-    
+
     def closeTab(self, index, saveFile, setMsgBoxPos, mainwindow):
         """Called when closing tabs"""
         editor = self.currentWidget()
@@ -47,29 +27,29 @@ class TabBar(QtGui.QTabWidget):
                 self.removeTab(index)
             else:
                 msgBox = QtGui.QMessageBox(mainwindow)
-                
+
                 # Set pos
                 msgBox = setMsgBoxPos(msgBox)
-            
+
                 # Info
                 msgBox.setText("The document has been modified.")
                 msgBox.setInformativeText(
                     "Do you want to save your changes?"
                 )
                 msgBox.setIcon(msgBox.Warning)
-                
+
                 # Buttons
                 buttons = msgBox.Cancel | msgBox.Discard | msgBox.Save
                 msgBox.setStandardButtons(buttons)
                 msgBox.setDefaultButton(msgBox.Save)
-                
+
                 # Run
                 ret = msgBox.exec_()
-                
+
                 # Process return code
                 if ret == msgBox.Discard or ret == msgBox.Save and saveFile():
                     self.removeTab(index)
-    
+
     def mousePressEvent(self, event):
         """
         Fix bug where MMB (Middle Mouse Button)
