@@ -1,7 +1,7 @@
 #
 #  editor.py
 #
-from PySide import QtCore, QtGui
+from PySide2 import QtCore, QtGui, QtWidgets
 from src.highlighter import PygmentsHighlighter
 from src.extended import FindDialog, ReplaceDialog, codeToolTip
 from src.completer import CodeAnalyser, Completer, Autocompleter
@@ -11,10 +11,10 @@ import os
 import ast
 
 
-class LineArea(QtGui.QWidget):
+class LineArea(QtWidgets.QWidget):
 
     def __init__(self, editor):
-        QtGui.QWidget.__init__(self, editor)
+        QtWidgets.QWidget.__init__(self, editor)
         self.editor = editor
 
     def sizeHint(self, *args, **kwargs):
@@ -30,7 +30,7 @@ class ColumnLine(LineArea):
         self.editor.columnLinePaintEvent(event)
 
 
-class Editor(QtGui.QPlainTextEdit):
+class Editor(QtWidgets.QPlainTextEdit):
     isUntitled = False
     filename = ''
     indentation = 0
@@ -75,8 +75,8 @@ class Editor(QtGui.QPlainTextEdit):
         self.completer = Completer(self)
         self.autocompleter = Autocompleter()
 
-        # Add the __builtin__ module to the autocompleter
-        self.autocompleter.add_module(__import__('__builtin__'))
+        # Add the builtins module to the autocompleter
+        self.autocompleter.add_module(__import__('builtins'))
 
         # Status bar
         self.statusBar = statusBar
@@ -85,7 +85,7 @@ class Editor(QtGui.QPlainTextEdit):
         self.highlighter = PygmentsHighlighter(self)
 
         # Add line number label to status bar and update it
-        self.lineNumber = QtGui.QLabel()
+        self.lineNumber = QtWidgets.QLabel()
         self.connect(self, QtCore.SIGNAL("cursorPositionChanged()"),
                     self.updateStatusBar)
         self.connect(self, QtCore.SIGNAL("selectionChanged()"),
@@ -93,8 +93,8 @@ class Editor(QtGui.QPlainTextEdit):
         self.updateStatusBar()
 
         # Remove frame and set line wrap mode
-        self.setLineWrapMode(QtGui.QPlainTextEdit.NoWrap)
-        self.setFrameStyle(QtGui.QFrame.NoFrame)
+        self.setLineWrapMode(QtWidgets.QPlainTextEdit.NoWrap)
+        self.setFrameStyle(QtWidgets.QFrame.NoFrame)
 
         # Draw the column line
         self.enableColumnLine = False
@@ -164,7 +164,7 @@ class Editor(QtGui.QPlainTextEdit):
                 if not os.path.exists(complete):
                     complete = old
                 else:
-                    self.completer.setModel(QtGui.QDirModel())
+                    self.completer.setModel(QtWidgets.QDirModel())
 
                 # Use the word under the cursor to start autocompletion
                 self.completer.setCompletionPrefix(complete)
@@ -174,7 +174,7 @@ class Editor(QtGui.QPlainTextEdit):
         else:
             # Autocomplete Python with no prefix
             # put list in model?
-            self.completer = Completer(self, self.autocompleter['__builtin__'])
+            self.completer = Completer(self, self.autocompleter['builtins'])
 
         # Show completer
         if self.completer.completionCount():
@@ -186,7 +186,7 @@ class Editor(QtGui.QPlainTextEdit):
             self.update()
 
             # Draw column line area
-            painter = QtGui.QPainter(self.columnLine)
+            painter = QtWidgets.QPainter(self.columnLine)
             color = QtGui.QColor("#000000")
             color.setAlpha(80)
             painter.fillRect(event.rect(), color)
@@ -203,7 +203,7 @@ class Editor(QtGui.QPlainTextEdit):
         self.setTextCursor(cursor)
         self.completed = True
 
-    def find(self, text='', pos=None, comp=False, states={}, returnCursor=True):
+    def find(self, text='', pos=None, comp=False, states={}, replaceCursor=True):
         # Check and get text if none was given
         if not text:
             states = {
@@ -236,8 +236,8 @@ class Editor(QtGui.QPlainTextEdit):
             if not states['caseSensitive']:
                 all_text = all_text.lower()
             if text in all_text: do = 1
-            if not do and states['wholeWord']:
-                if ' ' + txt + ' ' in all_text: do = 1
+            if do and states['wholeWord']:
+                if not f' {txt} ' in all_text: do = 0
             if not do and comp and states['replaceAll']: states['backward'] = 1
             if do:
                 self.find_text = text
@@ -261,14 +261,18 @@ class Editor(QtGui.QPlainTextEdit):
                 else:
                     cursor = self.document().find(self.find_text, pos, flags)
 
+                # Move cursor
+                if replaceCursor:
+                    self.setTextCursor(cursor)
+
                 # Return search result
                 if cursor.hasSelection():
-                    if comp: return (cursor, True) if returnCursor else True
+                    return True
                 else:
                     # Otherwise try searching from the beginning of the document
-                    if comp: return (cursor, False) if returnCursor else False
-                    self.find(text, 0, comp, states)
-            elif comp: return (cursor, False) if returnCursor else False
+                    if comp: return False
+                    return self.find(text, 0, comp, states)
+            elif comp: return False
 
     def getWordUnderCursor(self, position=False):
         cursor = self.textCursor()
@@ -288,7 +292,7 @@ class Editor(QtGui.QPlainTextEdit):
             return word
 
     def goto_line(self):
-        line, ok = QtGui.QInputDialog.getInt(self, "Goto", "Go to Line number:")
+        line, ok = QtWidgets.QInputDialog.getInt(self, "Goto", "Go to Line number:")
         if ok:
             self.moveCursor(QtGui.QTextCursor.Start)
             for _ in range(line - 1):
@@ -300,10 +304,10 @@ class Editor(QtGui.QPlainTextEdit):
         self.setExtraSelections(objects)
 
         # Remove tooltips (? always)
-        QtGui.QToolTip.hideText()
+        QtWidgets.QToolTip.hideText()
 
     def highlight_current_line(self):
-        selection = QtGui.QTextEdit.ExtraSelection()
+        selection = QtWidgets.QTextEdit.ExtraSelection()
         lineColor = QtGui.QColor("#858585")
         lineColor.setAlpha(20)
 
@@ -631,7 +635,7 @@ class Editor(QtGui.QPlainTextEdit):
 
     def lineAreaPaintEvent(self, event):
         # Draw gutter area
-        painter = QtGui.QPainter(self.lineArea)
+        painter = QtWidgets.QPainter(self.lineArea)
         painter.fillRect(event.rect(), QtGui.QColor('#EEEEEE'))
 
         # Match editor font
@@ -669,7 +673,7 @@ class Editor(QtGui.QPlainTextEdit):
             return 0
 
     def paste_reverse(self):
-        cb = QtGui.QApplication.clipboard().text()
+        cb = QtWidgets.QApplication.clipboard().text()
         self.insertPlainText(' '.join(cb.split(' ')[::-1]))
 
     def replace(self):

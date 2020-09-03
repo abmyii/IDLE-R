@@ -2,13 +2,21 @@ IDLE-Remake
 ===========
 A simple IDE aiming to be a remake of, and replacement to IDLE. Inspired by https://inventwithpython.com/blog/2014/11/20/idle-reimagined/.
 
+Usage
+=====
+```
+$ pip install -r requirements.txt
+$ python3 IDLE-R.py
+```
+
 Requirements
 =============
-PySide >= 1.2.1
-pygments >= 2.1
+PySide2
+
+pygments
 
 Optional Requirements
 =====================
 qtconsole >= 4.2.0
 
-Works with python-2.7+ and python-3.4+
+Works with Python 3+

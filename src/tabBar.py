@@ -1,22 +1,22 @@
 #
 #  tabbar.py
 #
-from PySide import QtCore, QtGui
+from PySide2 import QtCore, QtGui, QtWidgets
 
 
-class TabBar(QtGui.QTabWidget):
+class TabBar(QtWidgets.QTabWidget):
 
     def __init__(self, parent):
         super(TabBar, self).__init__(parent)
 
         # Add a + button for adding new tabs
-        button = QtGui.QPushButton(QtGui.QIcon("images/plus.png"), '')
+        button = QtWidgets.QPushButton(QtGui.QIcon("images/plus.png"), '')
         button.setFlat(True)
         button.pressed.connect(parent.newFile)
         self.setCornerWidget(button)
 
         # Customise look
-        tB = QtGui.QTabBar
+        tB = QtWidgets.QTabBar
         self.tabBar().setShape(tB.RoundedNorth)
 
     def closeTab(self, index, saveFile, setMsgBoxPos, mainwindow):
@@ -26,7 +26,7 @@ class TabBar(QtGui.QTabWidget):
             if not editor.document().isModified():
                 self.removeTab(index)
             else:
-                msgBox = QtGui.QMessageBox(mainwindow)
+                msgBox = QtWidgets.QMessageBox(mainwindow)
 
                 # Set pos
                 msgBox = setMsgBoxPos(msgBox)

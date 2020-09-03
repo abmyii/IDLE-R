@@ -1,7 +1,7 @@
 #
 #  highlighter.py
 #
-from PySide import QtCore, QtGui
+from PySide2 import QtCore, QtGui
 from src.styles import PythonStyle
 from pygments.token import Token
 

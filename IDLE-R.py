@@ -3,7 +3,7 @@
 #  IDLE-R.py
 #
 import sys, os, subprocess, re, time
-from PySide import QtCore, QtGui
+from PySide2 import QtCore, QtGui, QtWidgets
 from datetime import date
 
 # Import all parts of the IDE
@@ -39,24 +39,24 @@ def make_settings():
         with open_file(home + '.idle-r/recent_files', 'w') as rfile: pass
 
 
-class AboutIDLE_R(QtGui.QDialog):
+class AboutIDLE_R(QtWidgets.QDialog):
 
     def __init__(self, parent=None):
-        QtGui.QDialog.__init__(self, parent, QtCore.Qt.Dialog)
+        QtWidgets.QDialog.__init__(self, parent, QtCore.Qt.Dialog)
         self.setWindowTitle("About IDLE-R")
         self.setMaximumSize(QtCore.QSize(0, 0))
 
-        vbox = QtGui.QVBoxLayout(self)
+        vbox = QtWidgets.QVBoxLayout(self)
 
         #Create an icon for the Dialog
         pixmap = QtGui.QPixmap('images/icon.png')
-        self.lblIcon = QtGui.QLabel()
+        self.lblIcon = QtWidgets.QLabel()
         self.lblIcon.setPixmap(pixmap)
 
-        hbox = QtGui.QHBoxLayout()
+        hbox = QtWidgets.QHBoxLayout()
         hbox.addWidget(self.lblIcon)
 
-        lblTitle = QtGui.QLabel(
+        lblTitle = QtWidgets.QLabel(
 "<h1>IDLE-R</h1>\n<i>Intergrated Development Learning Environment Reimagined<i>"
 )
         lblTitle.setTextFormat(QtCore.Qt.RichText)
@@ -64,14 +64,14 @@ class AboutIDLE_R(QtGui.QDialog):
         hbox.addWidget(lblTitle)
         vbox.addLayout(hbox)
         #Add description
-        vbox.addWidget(QtGui.QLabel("""
+        vbox.addWidget(QtWidgets.QLabel("""
 IDLE-R (Intergrated Development Learning Environment Reimagined), is a
 clone of IDLE but with fixes to make it more user and learner friendly.
 """
 ))
 
 
-class IDLE_R(QtGui.QMainWindow):
+class IDLE_R(QtWidgets.QMainWindow):
 
     def __init__(self):
         # Init & Tweak
@@ -91,7 +91,7 @@ class IDLE_R(QtGui.QMainWindow):
         self.addMenuActions()
 
         # Add tool
-        self.tool_bar = QtGui.QToolBar()
+        self.tool_bar = QtWidgets.QToolBar()
         self.tool_bar.setMovable(False)
         self.tool_bar.addAction('')
         self.addToolBar(QtCore.Qt.TopToolBarArea, self.tool_bar)
@@ -107,7 +107,7 @@ class IDLE_R(QtGui.QMainWindow):
         if options == 'gvim':
             if os.path.isfile('.entered'):
                 os.remove('.entered')
-            gvim_container = QtGui.QX11EmbedContainer(self)
+            gvim_container = QtWidgets.QX11EmbedContainer(self)
             winId = str(gvim_container.winId())
             if sys.platform in ['win32', 'cygwin']:
                 args = ['gvim.exe', '--winid', winId, '--cmd', '"source test.session"']
@@ -313,7 +313,7 @@ class IDLE_R(QtGui.QMainWindow):
         AboutIDLE_R(self).show()
 
     def about_qt(self):
-        QtGui.QMessageBox.aboutQt(self, 'About Qt')
+        QtWidgets.QMessageBox.aboutQt(self, 'About Qt')
 
     def auto_stack_view(self):
         pass
@@ -339,7 +339,7 @@ class IDLE_R(QtGui.QMainWindow):
                 break
 
         if edited:
-            msgBox = QtGui.QMessageBox(self)
+            msgBox = QtWidgets.QMessageBox(self)
 
             # Set pos
             msgBox = self.setMsgBoxPos(msgBox)
@@ -398,10 +398,10 @@ class IDLE_R(QtGui.QMainWindow):
         home = os.path.expanduser('~') + os.path.sep
         name = action
         message = "Are you sure you want to delete the workspace " + name + "?"
-        delete = QtGui.QMessageBox.question(
+        delete = QtWidgets.QMessageBox.question(
                 self, 'Delete Workspace', message,
-                QtGui.QMessageBox.No|QtGui.QMessageBox.Yes)
-        if delete == QtGui.QMessageBox.Yes:
+                QtWidgets.QMessageBox.No|QtWidgets.QMessageBox.Yes)
+        if delete == QtWidgets.QMessageBox.Yes:
             os.remove(home + '.idle-r/workspaces/' + name)
             self.addMenuActions()
 
@@ -463,9 +463,9 @@ class IDLE_R(QtGui.QMainWindow):
     def newAction(self, name, action, shortcut=None, icon=None):
         """Make actions quickly"""
         if icon:
-            Action = QtGui.QAction(QtGui.QIcon(icon), name, self)
+            Action = QtWidgets.QAction(QtWidgets.QIcon(icon), name, self)
         else:
-            Action = QtGui.QAction(name, self)
+            Action = QtWidgets.QAction(name, self)
         Action.triggered.connect(action)
         if shortcut:
             Action.setShortcut(shortcut)
@@ -494,7 +494,7 @@ class IDLE_R(QtGui.QMainWindow):
 
             # Set cursor pos
             if cpos:
-                cursor = QtGui.QTextCursor
+                cursor = QtWidgets.QTextCursor
                 textCursor = editor.textCursor()
                 textCursor.movePosition(cursor.Right, n=cpos)
                 editor.setTextCursor(textCursor)
@@ -512,7 +512,7 @@ class IDLE_R(QtGui.QMainWindow):
 
     def newShortcut(self, action, shortcut):
         """A function so I can make keyboard shortcuts"""
-        Action = QtGui.QAction(self)
+        Action = QtWidgets.QAction(self)
         Action.setShortcut(shortcut)
         Action.triggered.connect(action)
         return Action
@@ -521,7 +521,7 @@ class IDLE_R(QtGui.QMainWindow):
         """Open a new file"""
         # Ask user for file
         if not filenames:
-            filenames = QtGui.QFileDialog.getOpenFileNames(
+            filenames = QtWidgets.QFileDialog.getOpenFileNames(
                 self, 'Open File', os.curdir,
                 "Python files (*.py *.pyw *.py3);; All files (*)"
             )[0]
@@ -657,7 +657,7 @@ class IDLE_R(QtGui.QMainWindow):
         # Save file
         if editor.isUntitled or saveAs:
             # Get name for the file to save to
-            fsave = QtGui.QFileDialog.getSaveFileName
+            fsave = QtWidgets.QFileDialog.getSaveFileName
             filename = fsave(
                 self, 'Save As', os.curdir,
                 "Python files (*.py *.pyw *.py3);; All files (*)"
@@ -706,13 +706,13 @@ class IDLE_R(QtGui.QMainWindow):
                 if editor.isModified():
                     message = """Cannot save workspace with"""
                     message += """\nmodified untitled documents."""
-                    QtGui.QMessageBox.information(
+                    QtWidgets.QMessageBox.information(
                         self, 'Workspace Save Aborted!', message)
                     return
             files.append(editor.filename)
 
         # Get workspace name
-        name, ok = QtGui.QInputDialog.getText(
+        name, ok = QtWidgets.QInputDialog.getText(
                 self, 'Save Workspace',
                 'What would you like this workspace to be called?:')
 
@@ -724,10 +724,10 @@ class IDLE_R(QtGui.QMainWindow):
                 message = """Are you sure you want to replace"""
                 message += """\nthe pre-existing workspace:\n"""
                 message += name
-                dupe = QtGui.QMessageBox.question(
+                dupe = QtWidgets.QMessageBox.question(
                         self, 'Duplicate Workspace', message,
-                        QtGui.QMessageBox.No|QtGui.QMessageBox.Yes)
-                if dupe == QtGui.QMessageBox.No:
+                        QtWidgets.QMessageBox.No|QtWidgets.QMessageBox.Yes)
+                if dupe == QtWidgets.QMessageBox.No:
                     self.saveWorkspace()
             # Save workspace
             self.writeWorkspace(str(name), files)
@@ -839,7 +839,7 @@ if __name__ == '__main__':
     make_settings()
 
     # Run the IDE
-    app = QtGui.QApplication(sys.argv)
+    app = QtWidgets.QApplication(sys.argv)
     cwd = os.path.dirname(os.path.realpath(__file__)) + '/'
     with open(cwd + 'theme' + os.path.sep + 'style.qss') as stylesheet:
         app.setStyleSheet(stylesheet.read())

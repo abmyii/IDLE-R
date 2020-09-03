@@ -1,12 +1,10 @@
 #
 #  extended.py
 #
-import PySide
-from PySide import QtCore, QtGui
-import threading
+from PySide2 import QtCore, QtGui, QtWidgets
 
 
-class QAction(QtGui.QAction):
+class QAction(QtWidgets.QAction):
 
     def __init__(self, *args):
         super(QAction, self).__init__(*args[:-1])
@@ -15,7 +13,7 @@ class QAction(QtGui.QAction):
         self.triggered.connect(doAction)
 
 
-class StatusBar(QtGui.QStatusBar):
+class StatusBar(QtWidgets.QStatusBar):
     widgets = []
 
     def addWidget(self, widget):
@@ -31,61 +29,61 @@ class StatusBar(QtGui.QStatusBar):
         super(StatusBar, self).removeWidget(widget)
 
 
-class FindDialog(QtGui.QDialog):
+class FindDialog(QtWidgets.QDialog):
 
     def __init__(self, states, parent=None):
         super(FindDialog, self).__init__(parent)
         self._succesful = True
 
-        label = QtGui.QLabel("Find what:")
-        self.lineEdit = QtGui.QLineEdit()
+        label = QtWidgets.QLabel("Find what:")
+        self.lineEdit = QtWidgets.QLineEdit()
         if states['find_text']:
             self.lineEdit.setText(states['find_text'])
         label.setBuddy(self.lineEdit)
 
-        self.caseSensitiveCheckBox = QtGui.QCheckBox("Match case")
+        self.caseSensitiveCheckBox = QtWidgets.QCheckBox("Match case")
         if states['caseSensitive']:
-            self.caseSensitiveCheckBox.setCheckState(2)
-        self.fromStartCheckBox = QtGui.QCheckBox("Search from start")
+            self.caseSensitiveCheckBox.setChecked(True)
+        self.fromStartCheckBox = QtWidgets.QCheckBox("Search from start")
         if states['fromStart']:
-            self.fromStartCheckBox.setCheckState(2)
+            self.fromStartCheckBox.setChecked(True)
 
-        findButton = QtGui.QPushButton("Find")
+        findButton = QtWidgets.QPushButton("Find")
         findButton.setDefault(True)
         findButton.clicked.connect(self.close)
-        closeButton = QtGui.QPushButton("Close")
+        closeButton = QtWidgets.QPushButton("Close")
         closeButton.clicked.connect(self.close_)
 
-        buttonBox = QtGui.QDialogButtonBox(QtCore.Qt.Vertical)
-        buttonBox.addButton(findButton, QtGui.QDialogButtonBox.ActionRole)
-        buttonBox.addButton(closeButton, QtGui.QDialogButtonBox.ActionRole)
+        buttonBox = QtWidgets.QDialogButtonBox(QtCore.Qt.Vertical)
+        buttonBox.addButton(findButton, QtWidgets.QDialogButtonBox.ActionRole)
+        buttonBox.addButton(closeButton, QtWidgets.QDialogButtonBox.ActionRole)
 
-        extension = QtGui.QWidget()
+        extension = QtWidgets.QWidget()
 
-        self.wholeWordsCheckBox = QtGui.QCheckBox("Whole words")
+        self.wholeWordsCheckBox = QtWidgets.QCheckBox("Whole words")
         if states['wholeWord']:
-            self.wholeWordsCheckBox.setCheckState(2)
-        self.backwardCheckBox = QtGui.QCheckBox("Search backward")
+            self.wholeWordsCheckBox.setChecked(True)
+        self.backwardCheckBox = QtWidgets.QCheckBox("Search backward")
         if states['backward']:
-            self.backwardCheckBox.setCheckState(2)
+            self.backwardCheckBox.setChecked(True)
 
-        extensionLayout = QtGui.QVBoxLayout()
+        extensionLayout = QtWidgets.QVBoxLayout()
         extensionLayout.addWidget(self.wholeWordsCheckBox)
         extensionLayout.addWidget(self.backwardCheckBox)
         extension.setLayout(extensionLayout)
 
-        topLeftLayout = QtGui.QHBoxLayout()
+        topLeftLayout = QtWidgets.QHBoxLayout()
         topLeftLayout.addWidget(label)
         topLeftLayout.addWidget(self.lineEdit)
 
-        leftLayout = QtGui.QVBoxLayout()
+        leftLayout = QtWidgets.QVBoxLayout()
         leftLayout.addLayout(topLeftLayout)
         leftLayout.addWidget(self.caseSensitiveCheckBox)
         leftLayout.addWidget(self.fromStartCheckBox)
         leftLayout.addStretch(1)
 
-        mainLayout = QtGui.QGridLayout()
-        mainLayout.setSizeConstraint(QtGui.QLayout.SetFixedSize)
+        mainLayout = QtWidgets.QGridLayout()
+        mainLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         mainLayout.addLayout(leftLayout, 0, 0)
         mainLayout.addWidget(buttonBox, 0, 1)
         mainLayout.addWidget(extension, 1, 0, 1, 2)
@@ -108,67 +106,67 @@ class FindDialog(QtGui.QDialog):
         return self.lineEdit.text(), states, self._succesful
 
 
-class ReplaceDialog(QtGui.QDialog):
+class ReplaceDialog(QtWidgets.QDialog):
 
     def __init__(self, states, parent=None):
         super(ReplaceDialog, self).__init__(parent)
         self._succesful = True
         self.buttonPressed = ''
 
-        label = QtGui.QLabel("Find:")
-        self.find = QtGui.QLineEdit()
+        label = QtWidgets.QLabel("Find:")
+        self.find = QtWidgets.QLineEdit()
         if states['replace_text']:
             self.find.setText(states['replace_text'])
         label.setBuddy(self.find)
 
-        label_rep = QtGui.QLabel("Replace With:")
-        self.replace = QtGui.QLineEdit()
+        label_rep = QtWidgets.QLabel("Replace With:")
+        self.replace = QtWidgets.QLineEdit()
         if states['replace_with']:
             self.replace.setText(states['replace_with'])
         label.setBuddy(self.replace)
 
-        self.caseSensitiveCheckBox = QtGui.QCheckBox("Match case")
+        self.caseSensitiveCheckBox = QtWidgets.QCheckBox("Match case")
         if states['caseSensitive']:
-            self.caseSensitiveCheckBox.setCheckState(2)
+            self.caseSensitiveCheckBox.setChecked(True)
 
-        replaceButton = QtGui.QPushButton("Replace")
+        replaceButton = QtWidgets.QPushButton("Replace")
         replaceButton.setDefault(True)
         replaceButton.clicked.connect(self.close)
-        replaceAllButton = QtGui.QPushButton("Replace All")
+        replaceAllButton = QtWidgets.QPushButton("Replace All")
         replaceAllButton.clicked.connect(self.close)
-        closeButton = QtGui.QPushButton("Close")
+        closeButton = QtWidgets.QPushButton("Close")
         closeButton.clicked.connect(self.close_)
 
-        buttonBox = QtGui.QDialogButtonBox(QtCore.Qt.Vertical)
-        buttonBox.addButton(replaceButton, QtGui.QDialogButtonBox.ActionRole)
-        buttonBox.addButton(replaceAllButton, QtGui.QDialogButtonBox.ActionRole)
-        buttonBox.addButton(closeButton, QtGui.QDialogButtonBox.ActionRole)
+        buttonBox = QtWidgets.QDialogButtonBox(QtCore.Qt.Vertical)
+        buttonBox.addButton(replaceButton, QtWidgets.QDialogButtonBox.ActionRole)
+        buttonBox.addButton(replaceAllButton, QtWidgets.QDialogButtonBox.ActionRole)
+        buttonBox.addButton(closeButton, QtWidgets.QDialogButtonBox.ActionRole)
         buttonBox.clicked.connect(self.setPressed)
 
-        extension = QtGui.QWidget()
+        extension = QtWidgets.QWidget()
 
-        self.wholeWordsCheckBox = QtGui.QCheckBox("Whole words")
+        self.wholeWordsCheckBox = QtWidgets.QCheckBox("Whole words")
         if states['wholeWord']:
-            self.wholeWordsCheckBox.setCheckState(2)
-        self.backwardCheckBox = QtGui.QCheckBox("Search backward")
+            self.wholeWordsCheckBox.setChecked(True)
+        self.backwardCheckBox = QtWidgets.QCheckBox("Search backward")
         if states['backward']:
-            self.backwardCheckBox.setCheckState(2)
+            self.backwardCheckBox.setChecked(True)
 
-        topLeftLayout = QtGui.QHBoxLayout()
+        topLeftLayout = QtWidgets.QHBoxLayout()
         topLeftLayout.addWidget(label)
         topLeftLayout.addWidget(self.find)
         topLeftLayout.addWidget(label_rep)
         topLeftLayout.addWidget(self.replace)
 
-        leftLayout = QtGui.QVBoxLayout()
+        leftLayout = QtWidgets.QVBoxLayout()
         leftLayout.addLayout(topLeftLayout)
         leftLayout.addWidget(self.caseSensitiveCheckBox)
         leftLayout.addWidget(self.wholeWordsCheckBox)
         leftLayout.addWidget(self.backwardCheckBox)
         leftLayout.addStretch(1)
 
-        mainLayout = QtGui.QGridLayout()
-        mainLayout.setSizeConstraint(QtGui.QLayout.SetFixedSize)
+        mainLayout = QtWidgets.QGridLayout()
+        mainLayout.setSizeConstraint(QtWidgets.QLayout.SetFixedSize)
         mainLayout.addLayout(leftLayout, 0, 0)
         mainLayout.addWidget(buttonBox, 0, 1)
         self.setLayout(mainLayout)
@@ -194,7 +192,7 @@ class ReplaceDialog(QtGui.QDialog):
         if args[0]: self.buttonPressed = args[0].text()
 
 
-class MenuBar(QtGui.QMenuBar):
+class MenuBar(QtWidgets.QMenuBar):
 
     def focusOutEvent(self, event):
         self.parent().setAlt()
@@ -205,8 +203,8 @@ def codeToolTip(widget, text):
     # Fix for different font sizes
     # Make sure tooltip doesn't close at the wrong times
     rect = widget.cursorRect()
-    winpos = QtGui.QApplication.activeWindow().pos()
+    winpos = QtWidgets.QApplication.activeWindow().pos()
     x = winpos.x()+45+(rect.width()*rect.x()/2)
     y = winpos.y()+100+(rect.height()*rect.y()/16)
     pos = QtCore.QPoint(x, y)
-    QtGui.QToolTip.showText(pos, text, widget, rect)
+    QtWidgets.QToolTip.showText(pos, text, widget, rect)

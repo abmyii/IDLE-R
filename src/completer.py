@@ -1,15 +1,15 @@
-from PySide import QtCore, QtGui
+from PySide2 import QtCore, QtWidgets
 import re
 import time
 
 
-class Completer(QtGui.QCompleter):
+class Completer(QtWidgets.QCompleter):
 
     def __init__(self, parent, stringList=[]):
         if stringList:
-            QtGui.QCompleter.__init__(self, stringList, parent)
+            QtWidgets.QCompleter.__init__(self, stringList, parent)
         else:
-            QtGui.QCompleter.__init__(self, parent)
+            QtWidgets.QCompleter.__init__(self, parent)
 
         # Default setup
         self.setCaseSensitivity(QtCore.Qt.CaseSensitive)
@@ -172,12 +172,12 @@ class Autocompleter(dict):
 
 # DEFUNCT: Replaced by Autocompleter
 # OR: Use with autocompleter as frontend to display matches
-class PythonCompleter(QtGui.QCompleter):
+class PythonCompleter(QtWidgets.QCompleter):
     def __init__(self, editor, db=None):
         # make the wordlist
         self.wordlist = ['import', 'print']
 
         # setup the completer
-        QtGui.QCompleter.__init__(self, sorted(self.wordlist), editor)
-        self.setModelSorting(QtGui.QCompleter.CaseSensitivelySortedModel)
+        QtWidgets.QCompleter.__init__(self, sorted(self.wordlist), editor)
+        self.setModelSorting(QtWidgets.QCompleter.CaseSensitivelySortedModel)
         self.setWrapAround(False)
