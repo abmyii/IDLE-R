@@ -2,6 +2,8 @@ IDLE-Remake
 ===========
 A simple IDE aiming to be a remake of, and replacement to IDLE. Inspired by https://inventwithpython.com/blog/2014/11/20/idle-reimagined/.
 
+![Screenshot](screenshot.png?raw=true "Screenshot")
+
 Usage
 =====
 ```
